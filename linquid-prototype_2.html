@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinqUID – Commerce Profile based on Social Identity</title>
+<style>
+  :root {
+    --navy: #0F2741;
+    --orange: #FF6600;
+    --blue: #0070C0;
+    --dark: #1D2228;
+    --mid: #404040;
+    --light: #A6A7A7;
+    --white: #FFFFFF;
+    --green: #00B050;
+    --red: #FF0000;
+    --bg: #F4F6FA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Open Sans', sans-serif; background: var(--bg); color: var(--dark); }
+
+  /* ===== LOGO SYSTEM =====
+     "Linq" = #000000 · "U" = #A5A5A5 · "ID" = #FF0000
+     On dark backgrounds we flip "Linq" to white
+  */
+  .lq-linq { color: #000000; }
+  .lq-u    { color: #A5A5A5; }
+  .lq-id   { color: #FF0000; }
+  .on-dark .lq-linq { color: #FFFFFF; }
+  .on-dark .lq-u    { color: rgba(255,255,255,0.32); }
+  .on-dark .lq-id   { color: #FF0000; }
+
+  /* ===== NAV ===== */
+  nav {
+    background: var(--navy); display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 62px; position: fixed; top: 0; width: 100%; z-index: 1000;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.35);
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .nav-badge {
+    width: 38px; height: 38px; background: white; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .nav-badge span { font-size: 10px; font-weight: 900; letter-spacing: -1px; }
+  .nav-wordmark { font-size: 23px; font-weight: 900; letter-spacing: 0px; }
+  nav ul { list-style: none; display: flex; gap: 6px; }
+  nav ul li a {
+    color: rgba(255,255,255,0.78); text-decoration: none; padding: 7px 13px;
+    border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s;
+  }
+  nav ul li a:hover, nav ul li a.active { background: #FF0000; color: white; }
+  .nav-cta {
+    background: #FF0000; color: white; border: none; padding: 8px 20px;
+    border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .nav-cta:hover { background: #cc0000; transform: translateY(-1px); }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; padding-top: 62px; min-height: 100vh; }
+  .view.active { display: block; }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(138deg, #0a1e35 0%, #0F2741 55%, #122840 100%);
+    color: white; padding: 96px 64px 80px;
+    display: flex; align-items: center; justify-content: space-between; gap: 56px;
+    min-height: calc(100vh - 62px); position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 75% 50%, rgba(255,0,0,0.07) 0%, transparent 60%);
+  }
+  .hero-left { flex: 1; max-width: 580px; position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,0,0,0.12); border: 1px solid rgba(255,0,0,0.4);
+    color: #ff5555; padding: 5px 14px; border-radius: 20px; font-size: 11px;
+    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 24px;
+  }
+  .hero-h1 { font-size: 52px; font-weight: 900; line-height: 1.05; margin-bottom: 20px; }
+  .hero-sub { font-size: 17px; color: rgba(255,255,255,0.68); line-height: 1.65; margin-bottom: 36px; }
+  .hero-btns { display: flex; gap: 13px; flex-wrap: wrap; }
+  .btn-red {
+    background: #FF0000; color: white; border: none; padding: 13px 30px;
+    border-radius: 30px; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 4px 18px rgba(255,0,0,0.3);
+  }
+  .btn-red:hover { background: #cc0000; transform: translateY(-2px); }
+  .btn-ghost {
+    background: transparent; color: white; border: 2px solid rgba(255,255,255,0.32);
+    padding: 13px 30px; border-radius: 30px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: white; background: rgba(255,255,255,0.07); }
+  .hero-stats { display: flex; gap: 36px; margin-top: 48px; flex-wrap: wrap; }
+  .hs-num { font-size: 32px; font-weight: 900; color: #FF0000; line-height: 1; }
+  .hs-label { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 3px; line-height: 1.4; }
+
+  /* Phone hero */
+  .hero-phone { flex: 0 0 300px; position: relative; z-index: 1; }
+  .ph-outer {
+    background: #111; border-radius: 44px; padding: 12px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.55); border: 2px solid rgba(255,255,255,0.08);
+    max-width: 275px; margin: 0 auto;
+  }
+  .ph-screen { background: white; border-radius: 34px; overflow: hidden; min-height: 480px; display: flex; flex-direction: column; }
+  .ph-header { background: #000; padding: 18px 18px 13px; text-align: center; }
+  .ph-logo { font-size: 26px; font-weight: 900; letter-spacing: -1px; line-height: 1; }
+  .ph-tagline { font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; letter-spacing: 0.4px; }
+  .ph-body { padding: 16px 14px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .ph-greet { font-size: 14px; font-weight: 700; color: #111; }
+  .ph-score { background: #000; border-radius: 12px; padding: 13px; text-align: center; }
+  .ph-score-lbl { font-size: 9px; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 1px; }
+  .ph-score-num { font-size: 42px; font-weight: 900; color: #FF0000; line-height: 1.1; }
+  .ph-score-sub { font-size: 9px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+  .ph-btns { display: flex; flex-direction: column; gap: 7px; }
+  .ph-btn { background: #f5f5f5; border: 1px solid #e5e5e5; color: #111; padding: 10px 12px; border-radius: 9px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .ph-btn:hover, .ph-btn.ph-primary { background: #FF0000; color: white; border-color: #FF0000; }
+
+  /* ===== SECTIONS ===== */
+  .sec { padding: 80px 60px; }
+  .sec-white { background: white; }
+  .sec-dark { background: #000; color: white; }
+  .sec-grey { background: #f5f5f5; }
+  .sec-navy { background: var(--navy); color: white; }
+  .stag { font-size: 10px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: #FF0000; margin-bottom: 10px; }
+  .stag-light { color: rgba(255,80,80,0.8); }
+  .stitle { font-size: 34px; font-weight: 900; color: var(--navy); margin-bottom: 10px; }
+  .stitle-light { color: white; }
+  .ssub { font-size: 15px; color: var(--mid); margin-bottom: 44px; max-width: 600px; line-height: 1.62; }
+  .ssub-light { color: rgba(255,255,255,0.55); }
+
+  /* ===== IDENTITY TYPES ===== */
+  .id5-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 13px; margin-bottom: 48px; }
+  .id5-card { border-radius: 13px; padding: 18px 14px; text-align: center; border: 2px solid transparent; transition: all 0.3s; }
+  .id5-card:hover { transform: translateY(-3px); }
+  .id5-card .ic-emoji { font-size: 26px; margin-bottom: 7px; }
+  .id5-card h4 { font-size: 12px; font-weight: 800; margin-bottom: 5px; }
+  .id5-card p { font-size: 10px; line-height: 1.5; color: var(--mid); }
+  .idc-priv { background: #fff0f0; border-color: #FF0000; } .idc-priv h4 { color: #FF0000; }
+  .idc-pers { background: #fff8f0; border-color: #FF6600; } .idc-pers h4 { color: #FF6600; }
+  .idc-prof { background: #f0f4ff; border-color: #0070C0; } .idc-prof h4 { color: #0070C0; }
+  .idc-prop { background: #f6f0ff; border-color: #8064A2; } .idc-prop h4 { color: #8064A2; }
+  .idc-pub  { background: #f0fff5; border-color: #00B050; } .idc-pub  h4 { color: #00B050; }
+
+  /* ===== PROBLEM CARDS ===== */
+  .prob-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .prob-card { background: #000; color: white; border-radius: 17px; padding: 26px 22px; border-top: 4px solid #FF0000; }
+  .prob-num { font-size: 42px; font-weight: 900; color: #FF0000; line-height: 1; }
+  .prob-card h3 { font-size: 15px; font-weight: 700; margin: 9px 0 5px; }
+  .prob-card p { font-size: 12px; color: rgba(255,255,255,0.62); line-height: 1.6; }
+
+  /* ===== WHY LINQUID features ===== */
+  .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .why-item { display: flex; gap: 14px; align-items: flex-start; }
+  .why-icon { width: 42px; height: 42px; background: rgba(255,0,0,0.08); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .why-item h4 { font-size: 14px; font-weight: 700; color: white; margin-bottom: 4px; }
+  .why-item p { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+
+  /* ===== HOW IT WORKS ===== */
+  .how-row { display: flex; position: relative; }
+  .how-row::before { content:''; position:absolute; top:37px; left:8%; right:8%; height:2px; background:linear-gradient(90deg,#FF0000,#0070C0,#00B050); }
+  .how-step { flex:1; text-align:center; padding:0 14px; position:relative; z-index:1; }
+  .how-circle { width:74px; height:74px; background:white; border:3px solid #FF0000; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; color:#FF0000; margin:0 auto 16px; box-shadow:0 4px 14px rgba(255,0,0,0.14); }
+  .how-step h3 { font-size:14px; font-weight:700; color:var(--navy); margin-bottom:5px; }
+  .how-step p { font-size:11px; color:var(--mid); line-height:1.5; }
+
+  /* ===== QUID LEVELS ===== */
+  .quid-row { display:flex; gap:13px; }
+  .qc { flex:1; border-radius:14px; padding:20px 16px; border:2px solid #e5e5e5; transition:all 0.3s; cursor:pointer; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+  .qc:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,0.09); }
+  .qc-num { font-size:36px; font-weight:900; line-height:1; }
+  .qc1 .qc-num { color:#A6A7A7; } .qc1:hover { border-color:#A6A7A7; }
+  .qc2 .qc-num { color:#0070C0; } .qc2:hover { border-color:#0070C0; }
+  .qc3 .qc-num { color:#00B050; } .qc3:hover { border-color:#00B050; }
+  .qc4 .qc-num { color:#FF6600; } .qc4:hover { border-color:#FF6600; }
+  .qc5 { background:#000; border-color:#FF0000; }
+  .qc5 .qc-num { color:#FF0000; }
+  .qc5 h3 { color:white !important; }
+  .qc5 p { color:rgba(255,255,255,0.5) !important; }
+  .qc h3 { font-size:12px; font-weight:700; margin:7px 0 4px; color:var(--navy); }
+  .qc p { font-size:10px; color:var(--mid); line-height:1.5; }
+  .qc-badge { display:inline-block; font-size:9px; font-weight:800; letter-spacing:1px; padding:2px 8px; border-radius:7px; margin-top:9px; text-transform:uppercase; }
+  .qc1 .qc-badge { background:#f0f0f0; color:#888; }
+  .qc2 .qc-badge { background:rgba(0,112,192,0.1); color:#0070C0; }
+  .qc3 .qc-badge { background:rgba(0,176,80,0.1); color:#00B050; }
+  .qc4 .qc-badge { background:rgba(255,102,0,0.1); color:#FF6600; }
+  .qc5 .qc-badge { background:#FF0000; color:white; }
+
+  /* ===== AGENTIC COMMERCE ===== */
+  .agent-flow { display:grid; grid-template-columns:1fr 48px 1fr 48px 1fr; gap:0; align-items:center; margin-bottom:48px; }
+  .agent-node { background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.15); border-radius:16px; padding:22px 16px; text-align:center; }
+  .agent-node.you { border-color:#FF0000; background:rgba(255,0,0,0.1); }
+  .agent-node.agent { border-color:rgba(255,255,255,0.35); background:rgba(255,255,255,0.06); }
+  .agent-node.merchant { border-color:#0070C0; background:rgba(0,112,192,0.1); }
+  .agent-node-icon { font-size:32px; margin-bottom:8px; }
+  .agent-node h4 { font-size:13px; font-weight:800; color:white; margin-bottom:4px; }
+  .agent-node p { font-size:10px; color:rgba(255,255,255,0.5); line-height:1.5; }
+  .agent-arrow { text-align:center; font-size:22px; color:rgba(255,255,255,0.35); }
+  .agent-rules { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .agent-rule { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:18px; }
+  .agent-rule-icon { font-size:20px; margin-bottom:8px; }
+  .agent-rule h4 { font-size:13px; font-weight:700; color:white; margin-bottom:5px; }
+  .agent-rule p { font-size:11px; color:rgba(255,255,255,0.5); line-height:1.55; }
+  .agent-rule.highlight { border-color:rgba(255,0,0,0.4); background:rgba(255,0,0,0.06); }
+  .agent-rule.highlight h4 { color:#ff6666; }
+  .sovereignty-bar { background:rgba(0,0,0,0.3); border:1px solid rgba(255,0,0,0.3); border-radius:12px; padding:18px 22px; margin-top:28px; display:flex; align-items:center; gap:16px; }
+  .sovereignty-bar .sov-icon { font-size:28px; flex-shrink:0; }
+  .sovereignty-bar h4 { font-size:14px; font-weight:800; color:#ff6666; margin-bottom:4px; }
+  .sovereignty-bar p { font-size:12px; color:rgba(255,255,255,0.55); line-height:1.5; }
+
+  /* ===== TWO-SIDED VALUE ===== */
+  .tsv-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .tsv-card { border-radius:16px; padding:26px 22px; }
+  .tsv-dark { background:#000; border-top:4px solid #FF0000; }
+  .tsv-light { background:#f5f5f5; border-top:4px solid #0070C0; }
+  .tsv-icon { font-size:26px; margin-bottom:10px; }
+  .tsv-title-dark { font-size:17px; font-weight:800; color:white; margin-bottom:12px; }
+  .tsv-title-light { font-size:17px; font-weight:800; color:var(--navy); margin-bottom:12px; }
+  .tsv-bullet { display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; }
+  .tsv-arrow-dark { color:#FF0000; font-weight:700; flex-shrink:0; font-size:13px; }
+  .tsv-arrow-light { color:#0070C0; font-weight:700; flex-shrink:0; font-size:13px; }
+  .tsv-bullet p { font-size:12px; line-height:1.55; }
+  .tsv-dark  .tsv-bullet p { color:rgba(255,255,255,0.65); }
+  .tsv-light .tsv-bullet p { color:var(--mid); }
+
+  /* ===== BIZ MODEL ===== */
+  .biz-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .biz-card { background:white; border-radius:16px; padding:26px 22px; box-shadow:0 3px 14px rgba(0,0,0,0.06); }
+  .biz-card:nth-child(1) { border-top:4px solid #0070C0; }
+  .biz-card:nth-child(2) { border-top:4px solid #FF0000; }
+  .biz-card:nth-child(3) { border-top:4px solid #00B050; }
+  .biz-icon { font-size:34px; margin-bottom:12px; }
+  .biz-card h3 { font-size:15px; font-weight:700; color:var(--navy); margin-bottom:6px; }
+  .biz-card p { font-size:12px; color:var(--mid); line-height:1.6; }
+
+  /* ===== MARKET ===== */
+  .mkt-grid { display:grid; grid-template-columns:1fr 1fr; gap:26px; align-items:center; }
+  .mkt-big { background:#000; border-radius:20px; padding:34px; border-left:6px solid #FF0000; }
+  .mkt-big-num { font-size:60px; font-weight:900; color:#FF0000; line-height:1; }
+  .mkt-big h3 { font-size:17px; font-weight:700; color:white; margin:12px 0 6px; }
+  .mkt-big p { font-size:12px; color:rgba(255,255,255,0.5); line-height:1.6; }
+  .mkt-list { display:flex; flex-direction:column; gap:12px; }
+  .mkt-item { background:white; border-radius:12px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .mkt-item h4 { font-size:13px; font-weight:600; color:var(--navy); }
+  .mkt-item p { font-size:11px; color:var(--mid); margin-top:2px; }
+  .mkt-num { font-size:19px; font-weight:900; color:#FF0000; white-space:nowrap; margin-left:12px; }
+
+  /* ===== COMP ===== */
+  .comp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .comp-card { background:white; border-radius:12px; padding:20px 16px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .comp-icon { font-size:30px; margin-bottom:7px; }
+  .comp-card h4 { font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+  .comp-card p { font-size:11px; color:var(--mid); line-height:1.5; }
+  .comp-lq { background:rgba(255,0,0,0.03); border:2px dashed rgba(255,0,0,0.25); }
+  .comp-lq h4 { color:#FF0000; }
+
+  /* ===== TEAM ===== */
+  .team-card { background:white; border-radius:20px; padding:34px 38px; box-shadow:0 4px 20px rgba(0,0,0,0.07); max-width:600px; margin:0 auto; display:flex; gap:26px; align-items:center; }
+  .team-av { width:86px; height:86px; background:#000; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .team-av-txt { font-size:22px; font-weight:900; letter-spacing:-1px; }
+  .team-name { font-size:21px; font-weight:900; color:var(--navy); }
+  .team-role { font-size:12px; color:#FF0000; font-weight:700; margin:3px 0 9px; }
+  .team-bio { font-size:13px; color:var(--mid); line-height:1.65; }
+  .team-contact { margin-top:8px; font-size:11px; color:var(--light); }
+  .team-contact a { color:#0070C0; text-decoration:none; }
+
+  /* ===== CONSUMER FLOW ===== */
+  .flow-page { background:#ebebeb; min-height:calc(100vh - 62px); display:flex; flex-direction:column; align-items:center; padding:40px 20px; }
+  .flow-h { font-size:25px; font-weight:900; color:var(--navy); margin-bottom:4px; }
+  .flow-sub { font-size:13px; color:var(--mid); margin-bottom:22px; }
+  .flow-tabs { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:26px; }
+  .ftab { background:white; border:1px solid #ddd; color:var(--mid); padding:7px 15px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .ftab.active,.ftab:hover { background:#FF0000; border-color:#FF0000; color:white; }
+  .flow-phone { background:#111; border-radius:44px; padding:12px; box-shadow:0 34px 88px rgba(0,0,0,0.42); border:2px solid rgba(255,255,255,0.07); width:310px; }
+  .flow-screen { background:white; border-radius:33px; overflow:hidden; min-height:540px; display:flex; flex-direction:column; }
+  .flow-scr-hdr { background:#000; padding:18px 16px 12px; text-align:center; }
+  .flow-scr-logo { font-size:21px; font-weight:900; letter-spacing:-1px; }
+  .flow-scr-logo .lq-linq { color:white; }
+  .flow-scr-logo .lq-u    { color:rgba(255,255,255,0.28); }
+  .flow-scr-logo .lq-id   { color:#FF0000; }
+  .flow-scr-sub { font-size:9px; color:rgba(255,255,255,0.35); margin-top:3px; letter-spacing:0.4px; }
+  .flow-scr-body { padding:16px 14px; flex:1; display:flex; flex-direction:column; gap:10px; }
+  .fpn { display:flex; gap:11px; margin-top:20px; }
+  .fpn button { padding:9px 22px; border-radius:22px; font-size:12px; font-weight:700; cursor:pointer; border:none; }
+  .fprev-btn { background:white; color:var(--mid); border:1px solid #ddd !important; }
+  .fprev-btn:hover { background:#f5f5f5; }
+  .fnext-btn { background:#FF0000; color:white; }
+  .fnext-btn:hover { background:#cc0000; }
+
+  /* ===== MERCHANT COMPARE ===== */
+  .cmp-wrap { display:grid; grid-template-columns:1fr 56px 1fr; gap:24px; align-items:start; max-width:940px; margin:0 auto; }
+  .cmp-title { font-size:15px; font-weight:800; padding:11px 16px; border-radius:9px; margin-bottom:12px; text-align:center; }
+  .ct-bad  { background:rgba(255,0,0,0.07); color:#FF0000; }
+  .ct-good { background:rgba(0,176,80,0.07); color:#00B050; }
+  .cmp-list { display:flex; flex-direction:column; gap:6px; }
+  .cs { padding:8px 12px; border-radius:6px; font-size:12px; font-weight:500; }
+  .cs-bad  { background:rgba(255,0,0,0.04); color:#cc0000; border-left:3px solid #FF0000; }
+  .cs-good { background:rgba(0,176,80,0.06); color:#006b30; border-left:3px solid #00B050; }
+  .cmp-vs { display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:900; color:var(--mid); padding-top:52px; }
+  .cmp-result { text-align:center; border-radius:12px; padding:16px; margin-top:12px; }
+  .cr-num { font-size:42px; font-weight:900; line-height:1; }
+
+  /* Checkout card */
+  .ck-card { background:white; border-radius:16px; padding:24px 22px; box-shadow:0 4px 20px rgba(0,0,0,0.07); max-width:380px; margin:24px auto 0; }
+  .ck-hdr { display:flex; align-items:center; gap:9px; padding-bottom:14px; border-bottom:1px solid #f0f0f0; margin-bottom:14px; }
+  .ck-brand { font-size:19px; font-weight:900; color:#0070C0; }
+  .ck-dots { display:flex; gap:6px; margin-bottom:16px; }
+  .ck-dot { height:5px; width:26px; border-radius:3px; background:#e5e5e5; transition:background 0.3s; }
+  .ck-dot.done   { background:#00B050; }
+  .ck-dot.active { background:#FF0000; }
+  .ck-product { background:#f8f8f8; border-radius:9px; padding:12px; display:flex; gap:12px; margin-bottom:14px; }
+  .ck-img { width:54px; height:54px; background:linear-gradient(135deg,#0070C0,#00B0E0); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .ck-info h4 { font-size:12px; font-weight:700; color:var(--navy); }
+  .ck-info p { font-size:11px; color:var(--mid); margin-top:1px; }
+  .ck-price { font-size:16px; font-weight:900; color:var(--navy); margin-top:3px; }
+  .ck-btn-lq { width:100%; padding:13px; background:#000; color:white; border:none; border-radius:9px; font-size:13px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:9px; transition:all 0.2s; }
+  .ck-btn-lq:hover { background:#1a1a1a; transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,0.18); }
+  .ck-lq-logo { font-size:13px; font-weight:900; letter-spacing:-0.5px; }
+  .ck-btn-guest { width:100%; padding:11px; background:white; border:2px solid #ddd; color:var(--mid); border-radius:9px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .ck-btn-guest:hover { border-color:#aaa; }
+  .ck-trust { text-align:center; font-size:10px; color:#bbb; margin-top:9px; }
+  .ck-trust span { color:#00B050; }
+  .ck-success { display:none; flex-direction:column; align-items:center; gap:10px; text-align:center; }
+  .ck-success-icon { font-size:52px; }
+  .ck-success h3 { font-size:19px; font-weight:900; color:var(--navy); }
+  .ck-success p { font-size:12px; color:var(--mid); line-height:1.5; }
+  .ck-order { background:#f8f8f8; border-radius:9px; padding:13px; width:100%; font-size:11px; color:var(--mid); text-align:left; line-height:1.8; }
+  .ck-order strong { color:var(--navy); }
+
+  /* Modal */
+  .modal-ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:3000; align-items:center; justify-content:center; }
+  .modal-ov.show { display:flex; }
+  .modal-box { background:#000; border-radius:26px; padding:34px 26px; width:310px; border:1px solid rgba(255,255,255,0.09); color:white; text-align:center; box-shadow:0 40px 100px rgba(0,0,0,0.6); }
+  .modal-logo { font-size:26px; font-weight:900; letter-spacing:-1px; margin-bottom:12px; }
+  .modal-logo .lq-linq { color:white; }
+  .modal-logo .lq-u    { color:rgba(255,255,255,0.28); }
+  .modal-logo .lq-id   { color:#FF0000; }
+  .modal-box h3 { font-size:17px; font-weight:800; margin-bottom:6px; }
+  .modal-box p { font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:18px; line-height:1.5; }
+  .modal-score { background:rgba(255,255,255,0.06); border-radius:12px; padding:16px; margin-bottom:14px; }
+  .modal-score-big { font-size:54px; font-weight:900; color:#FF0000; line-height:1; }
+  .modal-score-sub { font-size:9px; color:rgba(255,255,255,0.32); margin-top:3px; }
+  .modal-offer { background:rgba(0,176,80,0.12); border:1px solid rgba(0,176,80,0.22); border-radius:9px; padding:12px; font-size:12px; color:rgba(255,255,255,0.78); line-height:1.5; margin-bottom:16px; }
+  .modal-offer strong { color:#00B050; }
+  .modal-acts { display:flex; gap:9px; }
+  .modal-agree { flex:1; background:#FF0000; color:white; border:none; padding:11px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; }
+  .modal-agree:hover { background:#cc0000; }
+  .modal-decline { flex:1; background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.55); border:none; padding:11px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
+  .modal-decline:hover { background:rgba(255,255,255,0.11); }
+
+  /* ===== PITCH ===== */
+  .pitch-wrap { max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:20px; padding-bottom:60px; }
+  .ps { border-radius:20px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,0.06); }
+  .ps-cover { background:#000; padding:52px 44px; text-align:center; }
+  .ps-cover-logo { font-size:62px; font-weight:900; letter-spacing:-2px; line-height:1; }
+  .ps-cover-logo .lq-linq { color:white; }
+  .ps-cover-logo .lq-u    { color:rgba(255,255,255,0.22); }
+  .ps-cover-logo .lq-id   { color:#FF0000; }
+  .ps-cover-sub { font-size:15px; color:rgba(255,255,255,0.45); margin-bottom:18px; margin-top:8px; }
+  .ps-cover-tag { display:inline-block; background:rgba(255,0,0,0.14); border:1px solid rgba(255,0,0,0.38); color:#ff5555; padding:5px 16px; border-radius:18px; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+  .ps-w { background:white; padding:34px 38px; }
+  .ps-d { background:var(--navy); padding:34px 38px; }
+  .ps-k { background:#000; padding:34px 38px; }
+  .ps-tag { font-size:9px; font-weight:800; letter-spacing:2.5px; text-transform:uppercase; color:#FF0000; margin-bottom:7px; }
+  .ps-h { font-size:22px; font-weight:900; color:var(--navy); margin-bottom:16px; }
+  .ps-h-light { color:white; }
+  .ps-2c { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+  .ps-3c { display:grid; grid-template-columns:repeat(3,1fr); gap:13px; }
+  .ps-stat { border-radius:11px; padding:16px; background:rgba(255,0,0,0.05); border-left:4px solid #FF0000; }
+  .ps-stat h3 { font-size:26px; font-weight:900; color:#FF0000; }
+  .ps-stat p { font-size:11px; color:var(--mid); margin-top:3px; line-height:1.5; }
+  .ps-bullet { display:flex; gap:13px; align-items:flex-start; margin-bottom:13px; }
+  .ps-bi { width:34px; height:34px; background:rgba(255,0,0,0.07); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .ps-bt h4 { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .ps-bt-light h4 { color:white; }
+  .ps-bt-light p { font-size:11px; color:rgba(255,255,255,0.5); line-height:1.5; }
+  .ps-bt p { font-size:11px; color:var(--mid); line-height:1.5; }
+  .ps-gtm { background:#f5f5f5; border-radius:11px; padding:18px; text-align:center; }
+  .ps-gtm-ic { font-size:26px; margin-bottom:7px; }
+  .ps-gtm h4 { font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+  .ps-gtm p { font-size:10px; color:var(--mid); line-height:1.5; }
+  .ps-contact { background:#000; padding:34px 38px; text-align:center; color:white; }
+  .ps-contact-logo { font-size:34px; font-weight:900; letter-spacing:-1px; margin-bottom:7px; }
+  .ps-contact-logo .lq-linq { color:white; }
+  .ps-contact-logo .lq-u    { color:rgba(255,255,255,0.28); }
+  .ps-contact-logo .lq-id   { color:#FF0000; }
+  .ps-contact h3 { font-size:19px; font-weight:800; margin-bottom:4px; }
+  .ps-contact p { font-size:12px; color:rgba(255,255,255,0.45); margin-bottom:4px; }
+  .ps-contact a { color:#FF0000; text-decoration:none; font-weight:600; }
+
+  /* ===== CTA / FOOTER ===== */
+  .cta { background:#000; color:white; text-align:center; padding:88px 60px; }
+  .cta h2 { font-size:38px; font-weight:900; margin-bottom:12px; }
+  .cta p { font-size:15px; color:rgba(255,255,255,0.5); margin-bottom:34px; max-width:500px; margin-left:auto; margin-right:auto; }
+  .cta-btns { display:flex; gap:13px; justify-content:center; flex-wrap:wrap; }
+  footer { background:#111; color:rgba(255,255,255,0.38); text-align:center; padding:20px; font-size:11px; }
+
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+  .fi { animation: fadeInUp 0.38s ease forwards; }
+
+  @media (max-width: 780px) {
+    .hero { flex-direction:column; padding:40px 22px; }
+    .hero-h1 { font-size:36px; }
+    .hero-phone { display:none; }
+    .sec { padding:46px 18px; }
+    .prob-grid,.biz-grid,.comp-grid,.tsv-grid,.why-grid,.mkt-grid,.ps-2c,.ps-3c { grid-template-columns:1fr; }
+    .id5-grid { grid-template-columns:repeat(2,1fr); }
+    .quid-row { flex-wrap:wrap; }
+    .how-row { flex-direction:column; }
+    .how-row::before { display:none; }
+    .cmp-wrap { grid-template-columns:1fr; }
+    .cmp-vs { display:none; }
+    nav ul { display:none; }
+    .agent-flow { grid-template-columns:1fr; }
+    .agent-arrow { transform:rotate(90deg); }
+    .agent-rules { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav>
+  <div class="nav-brand" onclick="showView('home')">
+    <div class="nav-badge">
+      <span style="font-size:10px;font-weight:900;letter-spacing:-0.5px;">
+        <span class="lq-linq">Lq</span><span class="lq-u">U</span><span class="lq-id">ID</span>
+      </span>
+    </div>
+    <div class="nav-wordmark">
+      <span class="lq-linq" style="color:white;">Linq</span><span class="lq-u" style="color:rgba(255,255,255,0.32);">U</span><span class="lq-id">ID</span>
+    </div>
+  </div>
+  <ul>
+    <li><a href="#" onclick="showView('home')"     id="nav-home"     class="active">Home</a></li>
+    <li><a href="#" onclick="showView('consumer')" id="nav-consumer">Consumer Flow</a></li>
+    <li><a href="#" onclick="showView('merchant')" id="nav-merchant">Merchant Demo</a></li>
+    <li><a href="#" onclick="showView('pitch')"    id="nav-pitch">Investor Deck</a></li>
+  </ul>
+  <button class="nav-cta" onclick="showView('consumer')">Try Demo</button>
+</nav>
+
+<!-- ==================== HOME ==================== -->
+<div id="view-home" class="view active">
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-badge">● Identity Infrastructure for Agentic Commerce · 2026</div>
+      <h1 class="hero-h1">
+        Your Identity.<br>
+        Your Rules.<br>
+        <span class="lq-linq" style="color:white;">Linq</span><span class="lq-u" style="color:rgba(255,255,255,0.32);">U</span><span class="lq-id">ID</span><span style="color:rgba(255,255,255,0.55);"> Negotiates.</span>
+      </h1>
+      <p class="hero-sub">LinqUID is the identity layer commerce is missing — giving consumers sovereign control over who they are online, and giving AI agents a secure, consented foundation to negotiate on their behalf. You set the rules. Your QuID does the work.</p>
+      <div class="hero-btns">
+        <button class="btn-red" onclick="showView('consumer')">See Consumer Flow</button>
+        <button class="btn-ghost" onclick="showView('merchant')">Merchant Demo</button>
+      </div>
+      <div class="hero-stats">
+        <div><div class="hs-num">222%</div><div class="hs-label">CAC increase<br>over 8 years</div></div>
+        <div><div class="hs-num">70–90%</div><div class="hs-label">Social traffic<br>bounce rate</div></div>
+        <div><div class="hs-num">$100B</div><div class="hs-label">Retail media<br>by 2026</div></div>
+        <div><div class="hs-num">57%</div><div class="hs-label">Consumer-merchant<br>trust gap</div></div>
+      </div>
+    </div>
+    <div class="hero-phone">
+      <div class="ph-outer">
+        <div class="ph-screen">
+          <div class="ph-header">
+            <div class="ph-logo">
+              <span style="color:white;">Linq</span><span style="color:rgba(255,255,255,0.28);">U</span><span style="color:#FF0000;">ID</span>
+            </div>
+            <div class="ph-tagline">Your Identity · Your Rules · Your Commerce</div>
+          </div>
+          <div class="ph-body">
+            <div class="ph-greet">Hello, Sebastien 👋</div>
+            <div class="ph-score">
+              <div class="ph-score-lbl">Your QuID Score</div>
+              <div class="ph-score-num">4</div>
+              <div class="ph-score-sub">KYC-Linked · Agent: Active within your rules</div>
+            </div>
+            <div class="ph-btns">
+              <div class="ph-btn ph-primary">⚡ Fast Checkout</div>
+              <div class="ph-btn">🤖 ID Guardian — Agent Rules</div>
+              <div class="ph-btn">🪪 Share My Identity</div>
+              <div class="ph-btn">📈 Increase My Level</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 IDENTITIES -->
+  <div class="sec sec-white">
+    <div class="stag">The Problem</div>
+    <div class="stitle">Your Identity Is Fragmented — And Unprotected</div>
+    <div class="ssub">Every person carries five distinct identity layers online and in real life — but has no way to control which layer is exposed where, no way to revoke access, and no way to extract value from the trust they've built. In the age of AI agents acting on your behalf, this gap becomes dangerous.</div>
+    <div class="id5-grid">
+      <div class="id5-card idc-priv"><div class="ic-emoji">🔒</div><h4>Private</h4><p>Your innermost self — biometrics, medical, financial data you share with no one without explicit permission.</p></div>
+      <div class="id5-card idc-pers"><div class="ic-emoji">👨‍👩‍👧</div><h4>Personal</h4><p>Who you are with close friends and family — lifestyle, preferences, and social relationships.</p></div>
+      <div class="id5-card idc-prof"><div class="ic-emoji">💼</div><h4>Professional</h4><p>Your career identity — credentials, employer history, skills, and professional reputation.</p></div>
+      <div class="id5-card idc-prop"><div class="ic-emoji">🔑</div><h4>Proprietary</h4><p>Who you are within a specific platform — purchase history, loyalty status, and platform-specific context.</p></div>
+      <div class="id5-card idc-pub"><div class="ic-emoji">🌐</div><h4>Public</h4><p>Your social face — content you post, public profiles, follower networks, and searchable presence.</p></div>
+    </div>
+    <div class="prob-grid">
+      <div class="prob-card"><div class="prob-num">$29</div><h3>Lost Per Order</h3><p>Brands are losing $29 for every order — a 222% rise in Customer Acquisition Costs over 8 years. Identity fragmentation is the root cause.</p></div>
+      <div class="prob-card"><div class="prob-num">0.5%</div><h3>Social Conversion Rate</h3><p>Bounce rate on social traffic: 70–90%. Conversion as low as 0.5%. Without a portable identity layer, every visit starts from zero.</p></div>
+      <div class="prob-card"><div class="prob-num">57%</div><h3>Consumer-Merchant Trust Gap</h3><p>A 57% trust gap between consumers and merchants. AI agents amplify this — negotiating on your behalf with no verified credential to anchor trust.</p></div>
+    </div>
+  </div>
+
+  <!-- WHY LINQUID -->
+  <div class="sec sec-dark">
+    <div class="stag stag-light">Why LinqUID</div>
+    <div class="stitle stitle-light">The Identity Layer Commerce Is Missing</div>
+    <div class="ssub ssub-light">Three converging forces make this the right moment: the rise of AI agents in commerce, the proliferation of identity signals, and the collapse of consumer trust in how data is used.</div>
+    <div class="why-grid">
+      <div class="why-item"><div class="why-icon">🤖</div><div><h4>AI agents need a trusted identity foundation</h4><p>As AI agents negotiate, shop, and transact on your behalf, they need a verified, consented credential to carry — or merchants will refuse to engage. QuID is that credential.</p></div></div>
+      <div class="why-item"><div class="why-icon">🛡️</div><div><h4>Human sovereignty, not AI override</h4><p>You define when and how your identity can be used. AI agents operate strictly within your declared parameters — never exceeding the QuID level or spend threshold you've approved.</p></div></div>
+      <div class="why-item"><div class="why-icon">🌐</div><div><h4>Social identity is the common denominator</h4><p>Physical and digital identities converge at social identity. LinqUID sits at this intersection — portable across merchants, channels, and AI agents alike.</p></div></div>
+      <div class="why-item"><div class="why-icon">🪪</div><div><h4>An identity wallet for the agentic era</h4><p>LinqUID is a commercial profile and consent engine. Users control which identity layer is shared, at what trust level, and for what purpose — in real time.</p></div></div>
+      <div class="why-item"><div class="why-icon">🤝</div><div><h4>Vouching network builds trust at scale</h4><p>Users vouch for users with lower QuID scores. Merchants scout the network to validate unknown customers before spending acquisition budget — human and agent alike.</p></div></div>
+      <div class="why-item"><div class="why-icon">🎁</div><div><h4>Value even while anonymous</h4><p>Consumers receive targeted offers based on perceived social value — even without sharing sensitive identity. Privacy and value, finally balanced.</p></div></div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="sec sec-white">
+    <div class="stag">Solution</div>
+    <div class="stitle">How LinqUID Works</div>
+    <div class="ssub">A sovereign identity layer that connects social presence to purchasing trust — and gives AI agents a secure, consented foundation to act within your boundaries.</div>
+    <div class="how-row">
+      <div class="how-step"><div class="how-circle">1</div><h3>Create Your QuID</h3><p>Enroll with basic info and establish a Q1 score. Your identity vault is created — controlled by you alone.</p></div>
+      <div class="how-step"><div class="how-circle">2</div><h3>Link Data Sources</h3><p>Connect social accounts, bank, or government ID — each link advances your QuID level and unlocks more commerce value.</p></div>
+      <div class="how-step"><div class="how-circle">3</div><h3>Set Your Rules</h3><p>Define your ID Guardian parameters: which QuID level an AI agent may share, with which merchant types, up to what spend — and when to require your approval.</p></div>
+      <div class="how-step"><div class="how-circle">4</div><h3>Agent or Self Checkout</h3><p>At checkout, your AI agent presents your QuID within your guardrails — or you tap once to approve. 14 screens collapse to 3.</p></div>
+      <div class="how-step"><div class="how-circle">5</div><h3>Earn Rewards</h3><p>Higher QuID levels unlock discounts and perks. Your agent negotiates the best available offer — within the rules you set.</p></div>
+    </div>
+  </div>
+
+  <!-- QUID LEVELS -->
+  <div class="sec sec-grey">
+    <div class="stag">QuID Score System</div>
+    <div class="stitle">5 Levels of Identity Trust</div>
+    <div class="ssub">Each QuID level reflects a richer, more verified identity profile — unlocking more merchant intelligence, more consumer rewards, and more authority for your AI agent to act on your behalf.</div>
+    <div class="quid-row">
+      <div class="qc qc1"><div class="qc-num">Q1</div><h3>Basic Identity</h3><p>Name and enrollment data. Sufficient for browsing, anonymous offers, and low-stakes interactions.</p><span class="qc-badge">Enrollment</span></div>
+      <div class="qc qc2"><div class="qc-num">Q2</div><h3>Linked Source</h3><p>One verified data source connected — social account, device, or email provider. Enables agent-assisted browsing.</p><span class="qc-badge">Linked</span></div>
+      <div class="qc qc3"><div class="qc-num">Q3</div><h3>Multi-Linked</h3><p>Multiple verified sources. Required for standard merchant fast-checkout. Agent can negotiate routine purchases autonomously.</p><span class="qc-badge">Verified</span></div>
+      <div class="qc qc4"><div class="qc-num">Q4</div><h3>KYC-Linked</h3><p>One KYC-verified source (e.g. bank account). Unlocks premium merchant perks. Agent requires your explicit rule to share at this level.</p><span class="qc-badge">KYC</span></div>
+      <div class="qc qc5"><div class="qc-num">Q5</div><h3>Government ID</h3><p>Government-issued reference verified. Maximum trust tier. Agent may never share Q5 autonomously — always requires direct human confirmation.</p><span class="qc-badge">Platinum</span></div>
+    </div>
+  </div>
+
+  <!-- AGENTIC COMMERCE -->
+  <div class="sec sec-navy">
+    <div class="stag stag-light">Agentic Commerce</div>
+    <div class="stitle stitle-light">Your Identity Negotiates For You</div>
+    <div class="ssub ssub-light">AI agents are already acting in commerce on your behalf — searching, comparing, and purchasing. LinqUID gives them a verified credential to carry and a set of human-defined guardrails they cannot exceed. You set the rules once. Your agent operates within them.</div>
+
+    <!-- Flow diagram -->
+    <div class="agent-flow">
+      <div class="agent-node you">
+        <div class="agent-node-icon">🧑</div>
+        <h4>You</h4>
+        <p>Set parameters once.<br>Your rules. Your ceiling.<br>Your identity stays sovereign.</p>
+      </div>
+      <div class="agent-arrow">→</div>
+      <div class="agent-node agent">
+        <div class="agent-node-icon">🤖</div>
+        <h4>Your AI Agent</h4>
+        <p>Negotiates within your guardrails. Presents your QuID. Secures offers. Cannot exceed your defined limits.</p>
+      </div>
+      <div class="agent-arrow">→</div>
+      <div class="agent-node merchant">
+        <div class="agent-node-icon">🏪</div>
+        <h4>Merchant</h4>
+        <p>Receives a verified QuID credential. Offers are calibrated to your trust level. Mutual consent on every transaction.</p>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="agent-rules">
+      <div class="agent-rule">
+        <div class="agent-rule-icon">📊</div>
+        <h4>QuID Level Ceiling Per Context</h4>
+        <p>You specify the maximum QuID level your agent may share — by merchant category, transaction type, or individual merchant. Retail: up to Q3. Financial: Q4 requires your tap. Unknown merchants: Q1 only.</p>
+      </div>
+      <div class="agent-rule">
+        <div class="agent-rule-icon">💰</div>
+        <h4>Spend Threshold Controls</h4>
+        <p>Set a monetary ceiling your agent may auto-approve. Below $200? Agent proceeds. Above that, it pauses and pings you for confirmation before sharing any identity data or completing a purchase.</p>
+      </div>
+      <div class="agent-rule">
+        <div class="agent-rule-icon">⏰</div>
+        <h4>Time-Based Authorization Windows</h4>
+        <p>Grant your agent extended access for a shopping session, a specific event (travel, conference), or a defined period. Outside that window, the agent reverts to Q1-only mode automatically.</p>
+      </div>
+      <div class="agent-rule">
+        <div class="agent-rule-icon">🔍</div>
+        <h4>Full Audit Log — Nothing Hidden</h4>
+        <p>Every action your agent takes is logged with timestamp, merchant, QuID level shared, and outcome. You review the full trail at any time. Revoke agent access instantly with one tap.</p>
+      </div>
+      <div class="agent-rule highlight">
+        <div class="agent-rule-icon">🛡️</div>
+        <h4>Hard Stops You Can Never Override Away</h4>
+        <p>Q5 (Government ID) can never be shared by an agent — ever. This requires your direct, real-time confirmation regardless of any rule you've set. Some floors are permanent by design.</p>
+      </div>
+      <div class="agent-rule highlight">
+        <div class="agent-rule-icon">🔴</div>
+        <h4>One-Tap Override — Always</h4>
+        <p>At any moment, you can pause, restrict, or revoke your agent's identity-sharing access. No wait, no process. You are always the final authority over your own QuID. The agent serves you, not the other way around.</p>
+      </div>
+    </div>
+
+    <div class="sovereignty-bar">
+      <div class="sov-icon">👑</div>
+      <div>
+        <h4>Human Sovereignty Is Non-Negotiable</h4>
+        <p>LinqUID is built on one foundational principle: the human is always in control. AI agents are powerful negotiators — but they operate on delegated authority within boundaries you define. Your identity is not a resource for the agent to optimize. It is yours. The agent is your instrument, not your proxy without limits.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TWO-SIDED VALUE -->
+  <div class="sec sec-white">
+    <div class="stag">Two-Sided Value</div>
+    <div class="stitle">Built for Both Sides of Commerce</div>
+    <div class="tsv-grid" style="margin-top:28px;">
+      <div class="tsv-card tsv-dark">
+        <div class="tsv-icon">🏪</div>
+        <div class="tsv-title-dark">For Retailers</div>
+        <div class="tsv-bullet"><span class="tsv-arrow-dark">→</span><p>QuID is a verified credential whether a human or AI agent is shopping — enabling confident, low-fraud engagement</p></div>
+        <div class="tsv-bullet"><span class="tsv-arrow-dark">→</span><p>Better KYC for online guest checkout and in-store walk-in — human or agent-driven</p></div>
+        <div class="tsv-bullet"><span class="tsv-arrow-dark">→</span><p>Scout a user's QuID cluster before spending acquisition budget on unknown visitors</p></div>
+        <div class="tsv-bullet"><span class="tsv-arrow-dark">→</span><p>Calibrate offers by QuID level — higher trust, better deal. Incentive alignment built in.</p></div>
+      </div>
+      <div class="tsv-card tsv-light">
+        <div class="tsv-icon">👤</div>
+        <div class="tsv-title-light">For Consumers</div>
+        <div class="tsv-bullet"><span class="tsv-arrow-light">→</span><p>Sovereign control over your identity — you decide what's shared, when, and at what trust level</p></div>
+        <div class="tsv-bullet"><span class="tsv-arrow-light">→</span><p>Your AI agent negotiates the best deal within your rules — no manual effort, no over-exposure</p></div>
+        <div class="tsv-bullet"><span class="tsv-arrow-light">→</span><p>One tap checkout instead of 14 form screens — with full consent at every step</p></div>
+        <div class="tsv-bullet"><span class="tsv-arrow-light">→</span><p>Receive value even while anonymous — QuID works at every level of disclosure</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUSINESS MODEL -->
+  <div class="sec sec-grey">
+    <div class="stag">Business Model</div>
+    <div class="stitle">How LinqUID Makes Money</div>
+    <div class="biz-grid">
+      <div class="biz-card"><div class="biz-icon">🏪</div><h3>Merchant Subscription</h3><p>Merchants pay to require QuID3+ at checkout and access identity cluster intelligence for KYC decisions — whether customers arrive human or agent-driven.</p></div>
+      <div class="biz-card"><div class="biz-icon">🔍</div><h3>Identity Scouting Fee</h3><p>Per-query fee to validate a user's QuID cluster before spending acquisition budget. Works for human visitors and AI-agent-driven sessions alike.</p></div>
+      <div class="biz-card"><div class="biz-icon">🤖</div><h3>Agent Negotiation Layer</h3><p>API access for AI agent platforms to present and verify QuID credentials at checkout — enabling compliant, consented agentic commerce at scale.</p></div>
+    </div>
+  </div>
+
+  <!-- MARKET -->
+  <div class="sec sec-white">
+    <div class="stag">Market Opportunity</div>
+    <div class="stitle">A $100B+ Underserved Market</div>
+    <div class="mkt-grid">
+      <div class="mkt-big"><div class="mkt-big-num">$100B</div><h3>Retail Media Spend by 2026</h3><p>McKinsey projection — all of it struggling with the attribution and identity problem LinqUID solves. Agentic commerce will accelerate this gap.</p></div>
+      <div class="mkt-list">
+        <div class="mkt-item"><div><h4>Loyalty Management Market (2026)</h4><p>12–23% CAGR through 2032</p></div><div class="mkt-num">$10.7B+</div></div>
+        <div class="mkt-item"><div><h4>Global Loyalty Market (2028)</h4><p>9.5% CAGR projected 2024–2028</p></div><div class="mkt-num">$217B</div></div>
+        <div class="mkt-item"><div><h4>Identity Verification Market</h4><p>KYC, fraud prevention, eCommerce</p></div><div class="mkt-num">$18B</div></div>
+        <div class="mkt-item"><div><h4>Agentic Commerce (2026 est.)</h4><p>AI-driven purchasing acceleration</p></div><div class="mkt-num">Emerging</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPETITION -->
+  <div class="sec sec-grey">
+    <div class="stag">Competitive Landscape</div>
+    <div class="stitle">Where LinqUID Fits</div>
+    <div class="ssub">Existing solutions each solve a fragment of the problem. None address the agentic commerce era, where AI agents need verified, consented credentials to negotiate on behalf of consumers.</div>
+    <div class="comp-grid">
+      <div class="comp-card"><div class="comp-icon">📢</div><h4>Advertising Agencies</h4><p>Spend on acquisition but cannot solve identity, attribution, or agent-commerce trust.</p></div>
+      <div class="comp-card"><div class="comp-icon">🏆</div><h4>Loyalty Programs</h4><p>Siloed per-merchant, not portable, high enrollment friction, invisible to AI agents.</p></div>
+      <div class="comp-card"><div class="comp-icon">📱</div><h4>Social Walled Gardens</h4><p>Data locked within platforms. No consent portability. AI agents cannot verify or carry social identity across merchants.</p></div>
+      <div class="comp-card comp-lq"><div class="comp-icon">🔗</div><h4>LinqUID — The Gap</h4><p>Portable, consented, QuID-verified identity for human and agentic commerce. The only layer built for both.</p></div>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="sec sec-white">
+    <div class="stag">Team</div>
+    <div class="stitle" style="text-align:center;">Founded by a Technology Executive</div>
+    <br>
+    <div class="team-card">
+      <div class="team-av">
+        <div class="team-av-txt">
+          <span style="color:white;">S</span><span style="color:rgba(255,255,255,0.28);">·</span><span style="color:#FF0000;">T</span>
+        </div>
+      </div>
+      <div>
+        <div class="team-name">Sebastien "Seb" Taveau</div>
+        <div class="team-role">Founder · Tech Product Executive</div>
+        <div class="team-bio">Technology Executive with deep background in DevOps, Architecture, and Information Security. Building the sovereign identity infrastructure commerce — and agentic commerce — is missing. At the intersection of social, physical, and digital identity.</div>
+        <div class="team-contact"><a href="mailto:staveau@linquid.us">staveau@linquid.us</a> · +1 650 283 0125</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h2>Your Identity.<br><span style="color:white;">Linq</span><span style="color:rgba(255,255,255,0.28);">U</span><span style="color:#FF0000;">ID</span> Protects It.</h2>
+    <p>Experience the consumer flow, see the merchant integration, or review the full investor deck.</p>
+    <div class="cta-btns">
+      <button class="btn-red" onclick="showView('consumer')">Consumer Demo</button>
+      <button class="btn-ghost" onclick="showView('merchant')">Merchant Demo</button>
+      <button class="btn-ghost" onclick="showView('pitch')">Investor Deck</button>
+    </div>
+  </div>
+
+  <footer>© 2026 <strong style="color:rgba(255,255,255,0.5);">Linq<span style="color:rgba(255,255,255,0.22);">U</span><span style="color:#FF0000;">ID</span></strong> — Sovereign Identity for the Agentic Commerce Era · Confidential</footer>
+</div>
+
+<!-- ==================== CONSUMER FLOW ==================== -->
+<div id="view-consumer" class="view">
+  <div class="flow-page">
+    <h2 class="flow-h">Consumer Experience</h2>
+    <p class="flow-sub">Tap each step to walk through the flow</p>
+    <div class="flow-tabs">
+      <button class="ftab active" onclick="setCS(0)" id="ft0">Login</button>
+      <button class="ftab" onclick="setCS(1)" id="ft1">Dashboard</button>
+      <button class="ftab" onclick="setCS(2)" id="ft2">Share Identity</button>
+      <button class="ftab" onclick="setCS(3)" id="ft3">Invite Friends</button>
+      <button class="ftab" onclick="setCS(4)" id="ft4">Increase Level</button>
+      <button class="ftab" onclick="setCS(5)" id="ft5">🛡️ ID Guardian</button>
+    </div>
+    <div class="flow-phone">
+      <div class="flow-screen">
+        <div class="flow-scr-hdr">
+          <div class="flow-scr-logo"><span class="lq-linq">Linq</span><span class="lq-u">U</span><span class="lq-id">ID</span></div>
+          <div class="flow-scr-sub">Your Identity · Your Rules · Your Commerce</div>
+        </div>
+        <div class="flow-scr-body fi" id="cs-body"></div>
+      </div>
+    </div>
+    <div class="fpn">
+      <button class="fprev-btn" onclick="prevCS()">← Prev</button>
+      <button class="fnext-btn" onclick="nextCS()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MERCHANT DEMO ==================== -->
+<div id="view-merchant" class="view">
+  <div style="padding:58px 48px;background:#f0f0f0;min-height:calc(100vh - 62px);">
+    <div class="stag" style="text-align:center;">Live Merchant Integration</div>
+    <h2 style="text-align:center;font-size:30px;font-weight:900;color:var(--navy);margin-bottom:8px;">Checkout: 14 Screens → 3</h2>
+    <p style="text-align:center;color:var(--mid);margin-bottom:42px;font-size:14px;">LinqUID collapses the entire checkout flow into a single consent action — for human or agent-driven shopping</p>
+    <div class="cmp-wrap">
+      <div>
+        <div class="cmp-title ct-bad">❌ Standard Checkout — 14 Steps</div>
+        <div class="cmp-list">
+          <div class="cs cs-bad">1. Add to Cart</div>
+          <div class="cs cs-bad">2. View Cart</div>
+          <div class="cs cs-bad">3. Sign In or Guest Choice</div>
+          <div class="cs cs-bad">4. Enter Email</div>
+          <div class="cs cs-bad">5. Enter Full Name</div>
+          <div class="cs cs-bad">6. Enter Shipping Address</div>
+          <div class="cs cs-bad">7. Select Shipping Method</div>
+          <div class="cs cs-bad">8. Enter Payment Info</div>
+          <div class="cs cs-bad">9. Enter Billing Address</div>
+          <div class="cs cs-bad">10. Review Full Order</div>
+          <div class="cs cs-bad">11. Apply Coupon Code</div>
+          <div class="cs cs-bad">12. Confirm Order</div>
+          <div class="cs cs-bad">13. 2FA / Verification Step</div>
+          <div class="cs cs-bad">14. Order Confirmation Page</div>
+        </div>
+        <div class="cmp-result" style="background:rgba(255,0,0,0.06);">
+          <div class="cr-num" style="color:#FF0000;">~70%</div>
+          <p style="font-size:12px;color:var(--mid);">Cart abandonment rate</p>
+        </div>
+      </div>
+      <div class="cmp-vs">VS</div>
+      <div>
+        <div class="cmp-title ct-good">✅ LinqUID Checkout — 3 Steps</div>
+        <div class="cmp-list">
+          <div class="cs cs-good">1. Tap "Checkout with LinqUID" or agent presents QuID automatically</div>
+          <div class="cs cs-good">2. Review consent &amp; confirm QuID level (or agent acts within your rules)</div>
+          <div class="cs cs-good">3. Order confirmed ✓ — identity shared with full mutual consent</div>
+        </div>
+        <div class="cmp-result">
+          <div class="cr-num" style="color:#00B050;">3 steps</div>
+          <p style="font-size:12px;color:var(--mid);">Product page → order confirmed</p>
+        </div>
+        <div class="ck-card" id="ck-card">
+          <div class="ck-hdr">
+            <div class="ck-brand">Walmart</div>
+            <span style="font-size:10px;color:var(--mid);">Secure Checkout</span>
+          </div>
+          <div class="ck-dots">
+            <div class="ck-dot active" id="ckd1"></div>
+            <div class="ck-dot" id="ckd2"></div>
+            <div class="ck-dot" id="ckd3"></div>
+          </div>
+          <div class="ck-product">
+            <div class="ck-img">📱</div>
+            <div class="ck-info">
+              <h4>Samsung Galaxy S24</h4>
+              <p>Phantom Black · 256GB</p>
+              <div class="ck-price">$799.99</div>
+            </div>
+          </div>
+          <button class="ck-btn-lq" onclick="openModal()" id="ck-lq-btn">
+            <span class="ck-lq-logo">
+              <span style="color:white;">Linq</span><span style="color:rgba(255,255,255,0.28);">U</span><span style="color:#FF0000;">ID</span>
+            </span>
+            Fast Checkout · Q4 Offer Available
+          </button>
+          <button class="ck-btn-guest" onclick="alert('Brace yourself — 14 screens incoming! 😱')">Continue as Guest</button>
+          <div class="ck-trust"><span>🔒 Secured</span> · Identity encrypted · Your consent required every time</div>
+          <div class="ck-success" id="ck-success">
+            <div class="ck-success-icon">🎉</div>
+            <h3>Order Confirmed!</h3>
+            <p>LinqUID checkout complete. Q4 identity shared within your rules. Agent action logged.</p>
+            <div class="ck-order">
+              <strong>Order #LQ-20260312-4821</strong><br>
+              Samsung Galaxy S24 — <strong style="color:#00B050;">$719.99</strong> <span style="color:#00B050;">(10% off via QuID4)</span><br>
+              Shipping: 123 Main St, Anytown, CA<br>
+              Est. delivery: 2–3 business days<br>
+              <span style="color:#0070C0;">🤖 Action logged to your ID Guardian audit trail</span>
+            </div>
+            <button class="btn-red" onclick="resetCK()" style="font-size:12px;padding:9px 20px;margin-top:6px;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>© 2026 <strong style="color:rgba(255,255,255,0.5);">Linq<span style="color:rgba(255,255,255,0.22);">U</span><span style="color:#FF0000;">ID</span></strong> — Sovereign Identity for the Agentic Commerce Era · Confidential</footer>
+</div>
+
+<!-- CONSENT MODAL -->
+<div class="modal-ov" id="consent-modal">
+  <div class="modal-box">
+    <div class="modal-logo"><span class="lq-linq">Linq</span><span class="lq-u">U</span><span class="lq-id">ID</span></div>
+    <h3>Share with Walmart?</h3>
+    <p>Walmart requests your LinqUID identity profile. This is within your ID Guardian rules (Retail: Q4 authorized). Review what will be shared.</p>
+    <div class="modal-score">
+      <div class="modal-score-big">Q4</div>
+      <div class="modal-score-sub">KYC-Linked profile · Within your declared parameters</div>
+    </div>
+    <div class="modal-offer">Share your <strong>QuID Level 4</strong> with Walmart and receive <strong>10% off + free 2-day shipping</strong></div>
+    <div class="modal-acts">
+      <button class="modal-agree" onclick="confirmCK()">Agree &amp; Save 10%</button>
+      <button class="modal-decline" onclick="closeModal()">Decline</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INVESTOR DECK ==================== -->
+<div id="view-pitch" class="view">
+  <div style="padding:58px 38px;background:#ebebeb;min-height:calc(100vh - 62px);">
+    <div class="pitch-wrap">
+
+      <div class="ps ps-cover">
+        <div class="ps-cover-logo"><span class="lq-linq">Linq</span><span class="lq-u">U</span><span class="lq-id">ID</span></div>
+        <div class="ps-cover-sub">Sovereign Identity for the Agentic Commerce Era</div>
+        <div class="ps-cover-tag">Confidential · 2026</div>
+      </div>
+
+      <div class="ps ps-w">
+        <div class="ps-tag">Problem</div>
+        <div class="ps-h">Commerce Is Broken — And Agentic AI Makes It Urgent</div>
+        <div class="ps-2c">
+          <div class="ps-stat"><h3>222%</h3><p>Rise in Customer Acquisition Costs over 8 years. Brands losing $29 per order (SimplicityDX).</p></div>
+          <div class="ps-stat"><h3>70–90%</h3><p>Bounce rate on social traffic to product pages. No persistent identity means every visit starts from zero.</p></div>
+          <div class="ps-stat"><h3>91%</h3><p>Of merchant ads impacted by dark social — traffic misattributed as "direct." Identity fragmentation at the root.</p></div>
+          <div class="ps-stat"><h3>$0</h3><p>Value currently extracted by consumers from their own identity data. AI agents will monetize this — with or without their consent.</p></div>
+        </div>
+      </div>
+
+      <div class="ps ps-w">
+        <div class="ps-tag">Root Cause</div>
+        <div class="ps-h">Five Identities. No Control. No Consent Layer.</div>
+        <p style="font-size:12px;color:var(--mid);margin-bottom:16px;line-height:1.6;">Every person has Private, Personal, Professional, Proprietary, and Public identities. We have no way to control which identity is used where — and as AI agents begin acting in commerce on our behalf, that gap becomes a vulnerability.</p>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px;">
+          <div style="background:#fff0f0;border-radius:9px;padding:13px 10px;text-align:center;"><div style="font-size:18px">🔒</div><div style="font-size:10px;font-weight:800;color:#FF0000;margin-top:4px;">Private</div></div>
+          <div style="background:#fff8f0;border-radius:9px;padding:13px 10px;text-align:center;"><div style="font-size:18px">👨‍👩‍👧</div><div style="font-size:10px;font-weight:800;color:#FF6600;margin-top:4px;">Personal</div></div>
+          <div style="background:#f0f4ff;border-radius:9px;padding:13px 10px;text-align:center;"><div style="font-size:18px">💼</div><div style="font-size:10px;font-weight:800;color:#0070C0;margin-top:4px;">Professional</div></div>
+          <div style="background:#f6f0ff;border-radius:9px;padding:13px 10px;text-align:center;"><div style="font-size:18px">🔑</div><div style="font-size:10px;font-weight:800;color:#8064A2;margin-top:4px;">Proprietary</div></div>
+          <div style="background:#f0fff5;border-radius:9px;padding:13px 10px;text-align:center;"><div style="font-size:18px">🌐</div><div style="font-size:10px;font-weight:800;color:#00B050;margin-top:4px;">Public</div></div>
+        </div>
+      </div>
+
+      <div class="ps ps-d">
+        <div class="ps-tag" style="color:rgba(255,80,80,0.85);">Solution</div>
+        <div class="ps-h ps-h-light">What LinqUID Does</div>
+        <div class="ps-bullet"><div class="ps-bi">🪪</div><div class="ps-bt ps-bt-light"><h4>Sovereign identity wallet and consent engine</h4><p>We simplify online guest checkout and bridge physical and digital identities into their common denominator: Social Identity. We give control back to the user — permanently.</p></div></div>
+        <div class="ps-bullet"><div class="ps-bi">🎯</div><div class="ps-bt ps-bt-light"><h4>QuID Score — 5 levels of verified identity trust</h4><p>Q1 Basic enrollment → Q2 One linked source → Q3 Multi-linked → Q4 KYC-required property → Q5 Government-issued ID. Each level unlocks more commerce value.</p></div></div>
+        <div class="ps-bullet"><div class="ps-bi">🤖</div><div class="ps-bt ps-bt-light"><h4>ID Guardian — agentic commerce with human sovereignty</h4><p>Users define the parameters within which their AI agent may act: QuID level ceiling per merchant category, spend thresholds, time windows, and hard stops. The agent negotiates. The human stays in control.</p></div></div>
+        <div class="ps-bullet"><div class="ps-bi">🤝</div><div class="ps-bt ps-bt-light"><h4>Vouching network builds trust at scale</h4><p>Users vouch for users with lower scores. Merchants validate unknown customers — human or agent-driven — before spending acquisition budget.</p></div></div>
+      </div>
+
+      <div class="ps ps-w">
+        <div class="ps-tag">QuID Score</div>
+        <div class="ps-h">5 Levels of Identity Trust — for Human and Agentic Commerce</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="display:flex;align-items:center;gap:13px;background:#f8f8f8;border-radius:9px;padding:13px 15px;border-left:4px solid #A6A7A7;"><div style="font-size:18px;font-weight:900;color:#A6A7A7;width:30px;flex-shrink:0;">Q1</div><div><strong style="font-size:12px;color:var(--navy);">Basic Identity</strong> <span style="font-size:11px;color:var(--mid);">— Enrollment data. Agent may share only with explicit merchant whitelist.</span></div></div>
+          <div style="display:flex;align-items:center;gap:13px;background:#f8f8f8;border-radius:9px;padding:13px 15px;border-left:4px solid #0070C0;"><div style="font-size:18px;font-weight:900;color:#0070C0;width:30px;flex-shrink:0;">Q2</div><div><strong style="font-size:12px;color:var(--navy);">Linked Source</strong> <span style="font-size:11px;color:var(--mid);">— One verified source. Agent may browse and compare on your behalf.</span></div></div>
+          <div style="display:flex;align-items:center;gap:13px;background:#f8f8f8;border-radius:9px;padding:13px 15px;border-left:4px solid #00B050;"><div style="font-size:18px;font-weight:900;color:#00B050;width:30px;flex-shrink:0;">Q3</div><div><strong style="font-size:12px;color:var(--navy);">Multi-Linked</strong> <span style="font-size:11px;color:var(--mid);">— Multiple sources. Agent may complete routine purchases autonomously within rules.</span></div></div>
+          <div style="display:flex;align-items:center;gap:13px;background:#f8f8f8;border-radius:9px;padding:13px 15px;border-left:4px solid #FF6600;"><div style="font-size:18px;font-weight:900;color:#FF6600;width:30px;flex-shrink:0;">Q4</div><div><strong style="font-size:12px;color:var(--navy);">KYC-Linked</strong> <span style="font-size:11px;color:var(--mid);">— KYC-verified source. Agent requires your explicit rule; you may still require a tap.</span></div></div>
+          <div style="display:flex;align-items:center;gap:13px;background:#000;border-radius:9px;padding:13px 15px;border-left:4px solid #FF0000;"><div style="font-size:18px;font-weight:900;color:#FF0000;width:30px;flex-shrink:0;">Q5</div><div><strong style="font-size:12px;color:white;">Government ID</strong> <span style="font-size:11px;color:rgba(255,255,255,0.45);">— Government-issued reference. Agent can NEVER share this autonomously. Always requires direct human confirmation.</span></div></div>
+        </div>
+      </div>
+
+      <div class="ps ps-w">
+        <div class="ps-tag">Business Model</div>
+        <div class="ps-h">Three Revenue Streams — Expanding with Agentic Commerce</div>
+        <div class="ps-3c">
+          <div style="background:#f5f5f5;border-radius:11px;padding:20px;border-top:4px solid #0070C0;"><div style="font-size:26px;margin-bottom:9px;">🏪</div><h4 style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:5px;">Merchant Subscription</h4><p style="font-size:11px;color:var(--mid);line-height:1.55;">Annual / monthly access to QuID3+ checkout and cluster intelligence — for human and agent-driven visits.</p></div>
+          <div style="background:#f5f5f5;border-radius:11px;padding:20px;border-top:4px solid #FF0000;"><div style="font-size:26px;margin-bottom:9px;">🔍</div><h4 style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:5px;">Identity Scouting</h4><p style="font-size:11px;color:var(--mid);line-height:1.55;">Per-query fee to validate a QuID cluster before spending acquisition budget on any visitor, human or agent.</p></div>
+          <div style="background:#f5f5f5;border-radius:11px;padding:20px;border-top:4px solid #00B050;"><div style="font-size:26px;margin-bottom:9px;">🤖</div><h4 style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:5px;">Agent Negotiation API</h4><p style="font-size:11px;color:var(--mid);line-height:1.55;">API access for AI agent platforms to present, verify, and operate QuID credentials at checkout with full consent compliance.</p></div>
+        </div>
+      </div>
+
+      <div class="ps ps-w">
+        <div class="ps-tag">Market</div>
+        <div class="ps-h">$100B+ Opportunity — Accelerating with Agentic Commerce</div>
+        <div class="ps-2c">
+          <div style="background:#000;border-radius:13px;padding:22px;color:white;border-left:5px solid #FF0000;">
+            <div style="font-size:46px;font-weight:900;color:#FF0000;line-height:1;">$100B</div>
+            <h4 style="font-size:14px;font-weight:700;color:white;margin:9px 0 5px;">Retail Media by 2026</h4>
+            <p style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">McKinsey projection. All of it requires identity, attribution, and — increasingly — agent-commerce consent solutions.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <div style="background:#f5f5f5;border-radius:9px;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:12px;font-weight:600;color:var(--navy);">Loyalty Management (2026)</div><div style="font-size:10px;color:var(--mid);">12–23% CAGR through 2032</div></div><div style="font-size:17px;font-weight:900;color:#FF0000;">$10.7B+</div></div>
+            <div style="background:#f5f5f5;border-radius:9px;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:12px;font-weight:600;color:var(--navy);">Global Loyalty Market (2028)</div><div style="font-size:10px;color:var(--mid);">9.5% CAGR 2024–2028</div></div><div style="font-size:17px;font-weight:900;color:#FF0000;">$217B</div></div>
+            <div style="background:#f5f5f5;border-radius:9px;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:12px;font-weight:600;color:var(--navy);">Identity Verification</div><div style="font-size:10px;color:var(--mid);">KYC, fraud, agentic commerce</div></div><div style="font-size:17px;font-weight:900;color:#FF0000;">$18B</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ps ps-w">
+        <div class="ps-tag">Go to Market</div>
+        <div class="ps-h">GTM Strategy</div>
+        <div class="ps-3c">
+          <div class="ps-gtm"><div class="ps-gtm-ic">🏦</div><h4>Banking Partnerships</h4><p>Accelerate QuID4/5 enrollment via banking onboarding. Instant trusted user base with validated KYC and government identity.</p></div>
+          <div class="ps-gtm"><div class="ps-gtm-ic">🛒</div><h4>Enterprise Retail</h4><p>Walmart-style integration. Reduce checkout from 14 → 3 screens. Enable agent-commerce from day one.</p></div>
+          <div class="ps-gtm"><div class="ps-gtm-ic">🤖</div><h4>AI Agent Platforms</h4><p>Partner with leading AI agent and shopping assistant platforms to embed QuID as the identity credential of record for agentic commerce.</p></div>
+        </div>
+      </div>
+
+      <div class="ps ps-contact">
+        <div class="ps-contact-logo"><span class="lq-linq">Linq</span><span class="lq-u">U</span><span class="lq-id">ID</span></div>
+        <h3>Sebastien "Seb" Taveau</h3>
+        <p>Founder · Tech Product Executive · DevOps, Architecture, Infosec</p>
+        <p><a href="mailto:staveau@linquid.us">staveau@linquid.us</a> · +1 650 283 0125</p>
+        <div style="margin-top:18px;"><button class="btn-red" onclick="window.location='mailto:staveau@linquid.us'">📧 Request a Meeting</button></div>
+      </div>
+
+    </div>
+  </div>
+  <footer>© 2026 <strong style="color:rgba(255,255,255,0.5);">Linq<span style="color:rgba(255,255,255,0.22);">U</span><span style="color:#FF0000;">ID</span></strong> — Sovereign Identity for the Agentic Commerce Era · Confidential</footer>
+</div>
+
+<script>
+function showView(n) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('nav ul li a').forEach(a => a.classList.remove('active'));
+  document.getElementById('view-'+n).classList.add('active');
+  const e = document.getElementById('nav-'+n);
+  if(e) e.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// CONSUMER SCREENS
+const cs = [
+// 0 — Login
+`<div style="display:flex;flex-direction:column;align-items:center;gap:13px;padding-top:6px;">
+  <div style="font-size:42px;">🔐</div>
+  <div style="font-weight:800;font-size:15px;color:#111;">Welcome Back</div>
+  <div style="font-size:10px;color:#aaa;text-align:center;margin-top:-7px;">Your identity. Your rules.</div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+    <div style="background:#f5f5f5;border:1px solid #e0e0e0;border-radius:9px;padding:12px 13px;font-size:11px;color:#bbb;">📧 Email address</div>
+    <div style="background:#f5f5f5;border:1px solid #e0e0e0;border-radius:9px;padding:12px 13px;font-size:11px;color:#bbb;">🔒 Password</div>
+    <div style="background:#FF0000;border-radius:9px;padding:12px;text-align:center;font-weight:800;font-size:12px;color:white;cursor:pointer;" onclick="setCS(1)">Log In</div>
+    <div style="text-align:center;font-size:10px;color:#ddd;">or</div>
+    <div style="background:white;border:2px solid #e0e0e0;border-radius:9px;padding:10px;text-align:center;font-size:11px;color:#666;cursor:pointer;">Create Account</div>
+  </div>
+  <div style="font-size:9px;color:#bbb;text-align:center;line-height:1.5;">🛡️ Your identity is encrypted and<br>never shared without your consent.</div>
+</div>`,
+
+// 1 — Dashboard
+`<div style="display:flex;flex-direction:column;gap:11px;">
+  <div style="font-weight:800;font-size:14px;color:#111;">Hello, Sebastien 👋</div>
+  <div style="background:#000;border-radius:13px;padding:13px;text-align:center;">
+    <div style="font-size:8px;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:1px;">Your QuID Score</div>
+    <div style="font-size:42px;font-weight:900;color:#FF0000;line-height:1.1;">1</div>
+    <div style="font-size:9px;color:rgba(255,255,255,0.3);">Basic Identity · Grow your score to unlock more</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:7px;">
+    <div style="background:#FF0000;border-radius:9px;padding:11px;text-align:center;font-size:11px;font-weight:700;color:white;cursor:pointer;" onclick="setCS(2)">🪪 Share My Identity</div>
+    <div style="background:#f5f5f5;border:1px solid #e5e5e5;border-radius:9px;padding:10px;text-align:center;font-size:11px;font-weight:600;color:#333;cursor:pointer;" onclick="setCS(3)">👥 Invite Friends</div>
+    <div style="background:#f5f5f5;border:1px solid #e5e5e5;border-radius:9px;padding:10px;text-align:center;font-size:11px;font-weight:600;color:#333;cursor:pointer;" onclick="setCS(4)">📈 Increase My Level</div>
+    <div style="background:#0F2741;border-radius:9px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:white;cursor:pointer;" onclick="setCS(5)">🛡️ ID Guardian — Agent Rules</div>
+  </div>
+</div>`,
+
+// 2 — Share Identity
+`<div style="display:flex;flex-direction:column;gap:10px;">
+  <div style="font-weight:800;font-size:14px;color:#111;">🪪 Share My Identity</div>
+  <div style="font-size:10px;color:#aaa;margin-top:-4px;">Choose what to share · You stay in control</div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:700;color:#111;">Name + Email</div><div style="font-size:9px;color:#aaa;">Basic enrollment data · Always your choice</div></div>
+    <span style="color:#A6A7A7;font-size:10px;font-weight:800;background:#f0f0f0;padding:2px 7px;border-radius:5px;">Q1</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:700;color:#111;">+ One Verified Source</div><div style="font-size:9px;color:#aaa;">Social account or email provider</div></div>
+    <span style="color:#0070C0;font-size:10px;font-weight:800;background:rgba(0,112,192,0.08);padding:2px 7px;border-radius:5px;">Q2</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:700;color:#111;">+ Multi-Linked</div><div style="font-size:9px;color:#aaa;">Multiple verified sources</div></div>
+    <span style="color:#00B050;font-size:10px;font-weight:800;background:rgba(0,176,80,0.08);padding:2px 7px;border-radius:5px;">Q3</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:700;color:#111;">+ KYC Property</div><div style="font-size:9px;color:#aaa;">KYC-verified source · Requires your explicit rule</div></div>
+    <span style="color:#FF6600;font-size:10px;font-weight:800;background:rgba(255,102,0,0.08);padding:2px 7px;border-radius:5px;">Q4</span>
+  </div>
+  <div style="background:#fff0f0;border:1px solid rgba(255,0,0,0.15);border-radius:9px;padding:9px 12px;font-size:9px;color:#555;line-height:1.5;">🛡️ Q5 Gov ID — Agent can never share this. Direct confirmation only.</div>
+  <div style="background:#f0fff5;border:1px solid #b7e4c7;border-radius:9px;padding:9px 12px;font-size:9px;color:#555;line-height:1.5;">✅ Share once · Anonymize · Block/Report · Full consent · Revoke anytime</div>
+</div>`,
+
+// 3 — Invite Friends
+`<div style="display:flex;flex-direction:column;gap:10px;">
+  <div style="font-weight:800;font-size:14px;color:#111;">👥 Invite Friends</div>
+  <div style="font-size:10px;color:#aaa;margin-top:-4px;">Vouch for friends · Grow your network score</div>
+  <div style="background:#f5f5f5;border-radius:9px;padding:12px;">
+    <div style="font-size:8px;color:#bbb;text-transform:uppercase;letter-spacing:1px;">Your referral link</div>
+    <div style="font-size:10px;color:#FF0000;font-weight:600;margin-top:3px;word-break:break-all;">linquid.app/join/seb-taveau-qx4f</div>
+  </div>
+  <div style="background:rgba(255,0,0,0.04);border:1px solid rgba(255,0,0,0.12);border-radius:9px;padding:11px;font-size:10px;color:#555;line-height:1.55;">Each friend who joins and reaches Q2 adds <strong style="color:#FF0000;">+0.5 to your score</strong>. Vouch for a friend with a lower score to raise both.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
+    <div style="background:#f5f5f5;border-radius:8px;padding:9px;text-align:center;font-size:10px;color:#555;cursor:pointer;">📱 SMS</div>
+    <div style="background:#f5f5f5;border-radius:8px;padding:9px;text-align:center;font-size:10px;color:#555;cursor:pointer;">📧 Email</div>
+    <div style="background:#f5f5f5;border-radius:8px;padding:9px;text-align:center;font-size:10px;color:#555;cursor:pointer;">🔗 Copy</div>
+  </div>
+</div>`,
+
+// 4 — Increase Level
+`<div style="display:flex;flex-direction:column;gap:9px;">
+  <div style="font-weight:800;font-size:14px;color:#111;">📈 Increase My Level</div>
+  <div style="font-size:10px;color:#aaa;margin-top:-4px;">Each level unlocks more value — for you and your agent</div>
+  <div style="background:rgba(0,176,80,0.05);border:1px solid rgba(0,176,80,0.18);border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;gap:7px;align-items:center;"><span>✅</span><div><div style="font-size:11px;font-weight:700;color:#111;">Basic info provided</div><div style="font-size:9px;color:#aaa;">Enrollment complete</div></div></div>
+    <span style="font-size:10px;font-weight:800;color:#00B050;">✓ Done</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;gap:7px;align-items:center;"><span>📱</span><div><div style="font-size:11px;font-weight:700;color:#111;">Link a data source</div><div style="font-size:9px;color:#aaa;">Connect social account → agent browses for you</div></div></div>
+    <span style="font-size:10px;font-weight:800;color:#0070C0;">Q2</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;gap:7px;align-items:center;"><span>🔗</span><div><div style="font-size:11px;font-weight:700;color:#111;">Add more sources</div><div style="font-size:9px;color:#aaa;">Multiple linked → agent buys within your rules</div></div></div>
+    <span style="font-size:10px;font-weight:800;color:#00B050;">Q3</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;gap:7px;align-items:center;"><span>🏦</span><div><div style="font-size:11px;font-weight:700;color:#111;">Link KYC property</div><div style="font-size:9px;color:#aaa;">Bank account → premium offers unlocked</div></div></div>
+    <span style="font-size:10px;font-weight:800;color:#FF6600;">Q4</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;gap:7px;align-items:center;"><span>🪪</span><div><div style="font-size:11px;font-weight:700;color:#111;">Government ID</div><div style="font-size:9px;color:#aaa;">Max trust · Always direct confirmation only</div></div></div>
+    <span style="font-size:10px;font-weight:800;color:#FF0000;">Q5</span>
+  </div>
+</div>`,
+
+// 5 — ID Guardian
+`<div style="display:flex;flex-direction:column;gap:9px;">
+  <div style="font-weight:800;font-size:14px;color:#111;">🛡️ ID Guardian</div>
+  <div style="font-size:10px;color:#aaa;margin-top:-4px;">Define what your AI agent can do with your identity</div>
+
+  <div style="background:#0F2741;border-radius:10px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:700;color:white;">AI Agent Access</div><div style="font-size:9px;color:rgba(255,255,255,0.45);">Agent acts on your behalf</div></div>
+    <div style="background:#00B050;border-radius:20px;padding:3px 10px;font-size:9px;font-weight:800;color:white;">● ACTIVE</div>
+  </div>
+
+  <div style="font-size:9px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">QuID Ceiling by Merchant Type</div>
+
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:600;color:#111;">🛒 Retail Merchants</div><div style="font-size:9px;color:#aaa;">Known, vetted retailers</div></div>
+    <span style="color:#00B050;font-size:10px;font-weight:800;background:rgba(0,176,80,0.08);padding:2px 7px;border-radius:5px;">up to Q3</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:600;color:#111;">🏦 Financial Services</div><div style="font-size:9px;color:#aaa;">Requires your tap to confirm</div></div>
+    <span style="color:#FF6600;font-size:10px;font-weight:800;background:rgba(255,102,0,0.08);padding:2px 7px;border-radius:5px;">Q4 + tap</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;font-weight:600;color:#111;">❓ Unknown Merchants</div><div style="font-size:9px;color:#aaa;">Agent shares minimum only</div></div>
+    <span style="color:#A6A7A7;font-size:10px;font-weight:800;background:#f0f0f0;padding:2px 7px;border-radius:5px;">Q1 only</span>
+  </div>
+
+  <div style="font-size:9px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Spend &amp; Time Controls</div>
+
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:11px;color:#111;">💰 Auto-approve up to</div>
+    <span style="font-size:11px;font-weight:800;color:#0070C0;">$500</span>
+  </div>
+  <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:9px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:11px;color:#111;">⏰ Active window</div>
+    <span style="font-size:11px;font-weight:800;color:#0070C0;">8am – 9pm</span>
+  </div>
+
+  <div style="background:#fff0f0;border:1px solid rgba(255,0,0,0.2);border-radius:9px;padding:9px 12px;font-size:9px;color:#cc0000;font-weight:700;line-height:1.5;">🔒 Q5 Gov ID — Never shared by agent. Ever. Direct confirmation required.</div>
+
+  <div style="background:#FF0000;border-radius:9px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:white;cursor:pointer;">🔴 Pause Agent Access</div>
+</div>`
+];
+
+let csIdx=0;
+function setCS(n){
+  csIdx=n;
+  const b=document.getElementById('cs-body');
+  b.innerHTML=cs[n];
+  b.classList.remove('fi'); void b.offsetWidth; b.classList.add('fi');
+  document.querySelectorAll('.ftab').forEach((t,i)=>t.classList.toggle('active',i===n));
+}
+function nextCS(){ setCS((csIdx+1)%cs.length); }
+function prevCS(){ setCS((csIdx-1+cs.length)%cs.length); }
+
+function openModal()  { document.getElementById('consent-modal').classList.add('show'); }
+function closeModal() { document.getElementById('consent-modal').classList.remove('show'); }
+function confirmCK(){
+  closeModal();
+  ['ckd1','ckd2','ckd3'].forEach(id=>{ document.getElementById(id).className='ck-dot done'; });
+  document.getElementById('ck-lq-btn').style.display='none';
+  document.querySelector('.ck-btn-guest').style.display='none';
+  document.querySelector('.ck-trust').style.display='none';
+  document.querySelector('.ck-product').style.display='none';
+  document.getElementById('ck-success').style.display='flex';
+}
+function resetCK(){
+  document.getElementById('ckd1').className='ck-dot active';
+  document.getElementById('ckd2').className='ck-dot';
+  document.getElementById('ckd3').className='ck-dot';
+  document.getElementById('ck-lq-btn').style.display='';
+  document.querySelector('.ck-btn-guest').style.display='';
+  document.querySelector('.ck-trust').style.display='';
+  document.querySelector('.ck-product').style.display='';
+  document.getElementById('ck-success').style.display='none';
+}
+
+setCS(0);
+</script>
+</body>
+</html>

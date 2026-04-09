@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LinqUID — Interactive Mobile Demo</title>
+<style>
+:root{--r:#E32726;--rd:#B01E1E;--rl:#FEE8E8;--g:#27AE60;--dk:#1A1A1A;--gr:#6B7280;--lt:#F5F5F5;--bd:#E5E7EB}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#111 0%,#2a2a2a 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+.dh{color:#fff;text-align:center;margin-bottom:14px}
+.dh h1{font-size:20px;font-weight:300;letter-spacing:1px}.dh h1 b{color:var(--r)}
+.dh p{font-size:11px;color:#777}
+.ms{display:flex;gap:8px;margin-bottom:14px}
+.mb{padding:8px 18px;border-radius:20px;border:1px solid #555;background:transparent;color:#888;font-size:12px;cursor:pointer;transition:all .2s}
+.mb.active{background:var(--r);border-color:var(--r);color:#fff;font-weight:700}
+.pw{width:375px;height:780px;position:relative}
+.pf{width:375px;height:780px;background:var(--lt);border-radius:52px;border:11px solid #1a1a1a;position:relative;overflow:hidden;box-shadow:0 0 0 1px #333,0 24px 70px rgba(0,0,0,.7)}
+.pf::before{content:'';position:absolute;left:-15px;top:110px;width:4px;height:55px;background:#2a2a2a;border-radius:2px 0 0 2px;box-shadow:0 75px 0 #2a2a2a,0 130px 0 #2a2a2a}
+.pf::after{content:'';position:absolute;right:-15px;top:170px;width:4px;height:75px;background:#2a2a2a;border-radius:0 2px 2px 0}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#1a1a1a;border-radius:0 0 18px 18px;z-index:100;display:flex;align-items:center;justify-content:center;gap:5px}
+.ns{width:46px;height:4px;background:#333;border-radius:2px}
+.nc{width:9px;height:9px;background:#333;border-radius:50%}
+.sc{position:absolute;inset:0;overflow:hidden}
+.s{position:absolute;inset:0;display:none;flex-direction:column;background:var(--lt);overflow:hidden}
+.s.on{display:flex}
+/* Status bar */
+.sb{min-height:42px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 18px 5px;font-size:11px;font-weight:600;flex-shrink:0}
+.sb.w{color:#fff}
+/* Nav */
+.sn{display:flex;align-items:center;gap:10px;padding:42px 18px 14px;flex-shrink:0}
+.bb{width:34px;height:34px;border-radius:50%;background:var(--lt);border:none;font-size:20px;color:var(--dk);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sn h2{font-size:19px;font-weight:700}
+/* Cards */
+.cs{background:var(--r);border-radius:14px;overflow:hidden;margin-bottom:14px}
+.ch{padding:12px 18px;font-size:15px;font-weight:700;color:#fff;border-bottom:1px solid rgba(255,255,255,.2)}
+.ci{background:#fff}
+.cx,.ci a{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s;text-decoration:none;color:var(--dk)}
+.cx:last-child,.ci a:last-child{border-bottom:none}
+.cx:active,.ci a:active{background:var(--lt)}
+.ck{width:38px;height:38px;background:var(--r);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:#fff}
+.ct{flex:1}.ct h3{font-size:14px;font-weight:600}.ct p{font-size:11px;color:var(--gr);margin-top:1px}
+.cv{color:var(--gr);font-size:20px}
+/* Buttons */
+.bp{width:100%;padding:15px;background:var(--r);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(227,39,38,.3);transition:transform .1s}
+.bp:active{transform:scale(.98)}
+.bs{width:100%;padding:14px;background:#fff;color:var(--r);border:2px solid var(--r);border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;transition:background .15s}
+.bs:active{background:var(--rl)}
+/* Form */
+.fg{margin-bottom:14px}
+.fl{font-size:12px;font-weight:600;color:var(--gr);margin-bottom:5px;display:block}
+.fi{width:100%;padding:13px 15px;border:2px solid var(--bd);border-radius:11px;font-size:14px;outline:none}
+.fi:focus{border-color:var(--r)}
+textarea.fi{resize:none}
+.fd{text-align:center;color:var(--gr);font-size:12px;margin:13px 0;position:relative}
+.fd::before,.fd::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--bd)}
+.fd::before{left:0}.fd::after{right:0}
+/* Level badge */
+.lb{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex-shrink:0}
+.l1{background:var(--r)}.l2{background:#E05A00}.l3{background:#D4A000}.l4{background:#5A9E00}.l5{background:var(--g)}
+/* Scrollable */
+.scr{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+/* Bottom logo */
+.bl{padding:14px;text-align:center;border-top:1px solid var(--bd);flex-shrink:0;margin-top:auto;font-size:15px;font-weight:700}
+.bl .q,.bl .ln{color:var(--dk)}.bl .u{color:var(--r)}
+/* Toast */
+.toast{position:absolute;bottom:60px;left:20px;right:20px;background:var(--dk);color:#fff;padding:12px 15px;border-radius:13px;font-size:13px;display:none;align-items:center;gap:9px;z-index:500;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.toast.on{display:flex;animation:sup .3s ease}
+@keyframes sup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* Info banner */
+.ib{background:var(--rl);border-left:3px solid var(--r);padding:11px 14px;margin:0 20px 14px;border-radius:0 8px 8px 0;font-size:12px;color:var(--dk);line-height:1.5}
+/* Level card */
+.lc{background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;border:2px solid var(--bd);cursor:pointer;margin-bottom:10px;transition:border-color .2s}
+.lc:active{border-color:var(--r)}.lc.act{border-color:var(--r);background:var(--rl)}
+.lct h3{font-size:13px;font-weight:700;margin-bottom:2px}.lct p{font-size:11px;color:var(--gr);line-height:1.4}
+/* Code inputs */
+.ci2{display:flex;gap:8px;justify-content:center;margin:18px 0}
+.cc{width:46px;height:56px;border:2px solid var(--bd);border-radius:10px;text-align:center;font-size:22px;font-weight:700;outline:none}
+.cc:focus{border-color:var(--r)}
+/* Toggle */
+.ts{position:relative;width:42px;height:24px;flex-shrink:0}
+.ts input{opacity:0;width:0;height:0}
+.tsl{position:absolute;inset:0;background:#ccc;border-radius:12px;cursor:pointer;transition:.3s}
+.tsl::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.tsl{background:var(--r)}
+input:checked+.tsl::before{transform:translateX(18px)}
+/* Contact */
+.con{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.cav{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.cch{width:22px;height:22px;border:2px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:11px}
+.cch.chk{background:var(--r);border-color:var(--r);color:#fff}
+/* Share option */
+.sob{display:flex;align-items:center;gap:13px;padding:16px 18px;background:#fff;border:2px solid var(--bd);border-radius:14px;cursor:pointer;margin-bottom:10px;text-align:left}
+.sob:active{border-color:var(--r);background:var(--rl)}
+.soi{font-size:26px}.sot h3{font-size:14px;font-weight:700;margin-bottom:1px}.sot p{font-size:11px;color:var(--gr)}
+/* Catalog */
+.cat{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--bd);background:#fff}
+.rl{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.cai{flex:1}.cai h3{font-size:13px;font-weight:600}.cai p{font-size:11px;color:var(--gr)}
+/* Walmart */
+.wh{background:#0071DC;padding:40px 10px 9px;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ws{flex:1;background:#fff;border-radius:18px;padding:7px 12px;font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px}
+.pi{width:100%;height:190px;background:linear-gradient(135deg,#f0f8ff,#dbeafe);display:flex;align-items:center;justify-content:center;font-size:80px;flex-shrink:0}
+.pp{padding:14px 16px}
+.lw{border:2px solid var(--r);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;margin:10px 0 8px;transition:background .15s}
+.lw:active{background:var(--rl)}
+/* Notification screen */
+.ns2{background:linear-gradient(180deg,#0d0d1a 0%,#1a1a2e 100%)}
+.nc2{background:rgba(255,255,255,.14);backdrop-filter:blur(16px);border-radius:14px;padding:14px;margin:0 20px 14px;cursor:pointer;border:1px solid rgba(255,255,255,.2)}
+.nch{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.nai{width:30px;height:30px;border-radius:8px;background:var(--r);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff}
+.na{display:flex;gap:7px;margin-top:9px;border-top:1px solid rgba(255,255,255,.15);padding-top:9px}
+.nabt{flex:1;background:rgba(255,255,255,.1);border:none;color:#fff;padding:7px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
+.nabt.pri{background:var(--r)}
+/* Order complete */
+.ci3{width:90px;height:90px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:44px;color:#fff;margin:0 auto 20px;box-shadow:0 6px 24px rgba(39,174,96,.4)}
+.od{background:var(--lt);border-radius:14px;padding:18px;text-align:left;margin:0 0 16px}
+.or{display:flex;justify-content:space-between;margin-bottom:7px;font-size:13px}
+.or .lb2{color:var(--gr)}
+/* Steps */
+.sti{display:flex;padding:0 20px;gap:6px;margin-bottom:14px}
+.std{width:8px;height:8px;border-radius:50%;background:var(--bd);flex:1;max-width:28px}
+.std.dn{background:var(--g)}.std.cr{background:var(--r)}
+/* Hint */
+.hint{font-size:11px;color:var(--gr);text-align:center;padding:6px 20px 14px;line-height:1.5}
+/* Progress bar */
+.pb{background:var(--bd);height:5px;margin:10px 20px;border-radius:3px;overflow:hidden;flex-shrink:0}
+.pbf{height:100%;background:var(--r);border-radius:3px;transition:width 1s ease}
+/* Offer box */
+.ob{background:linear-gradient(135deg,#fff5f5,var(--rl));border:1px solid #fecaca;border-radius:13px;padding:14px;margin:12px 0 18px}
+.ob h3{font-size:15px;font-weight:700;color:var(--r);margin-bottom:5px}
+.ob p{font-size:12px;color:var(--dk);line-height:1.5}
+/* Merchant nav */
+.mn{background:#fff;border-bottom:1px solid var(--bd);padding:5px 10px;display:flex;gap:14px;overflow-x:auto;font-size:10px;flex-shrink:0}
+.mn div{white-space:nowrap;padding:3px 0;cursor:pointer;color:var(--gr)}
+.mn div.act{color:var(--r);border-bottom:2px solid var(--r);font-weight:700}
+/* Walmart add btn */
+.wab{width:100%;background:#0071DC;color:#fff;border:none;padding:13px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;margin:10px 0 7px}
+/* Help item */
+.hi{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--bd);align-items:flex-start}
+.hii{width:38px;height:38px;border-radius:9px;background:var(--rl);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hit h3{font-size:13px;font-weight:600;margin-bottom:2px}.hit p{font-size:11px;color:var(--gr);line-height:1.4}
+/* Share level card */
+.slc{background:var(--r);margin:14px 20px;border-radius:18px;padding:22px;color:#fff;text-align:center}
+.slc h3{font-size:15px;font-weight:600;margin-bottom:3px;opacity:.9}
+.slc .bn{font-size:68px;font-weight:900;line-height:1}
+.slc p{font-size:12px;opacity:.85;margin-top:7px}
+/* Notif badge */
+.nb2{position:absolute;top:8px;right:10px;background:var(--r);color:#fff;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+/* Logo inline */
+.logo{font-weight:700}.logo .ln{color:var(--dk)}.logo .u{color:var(--r)}
+@media(max-width:420px){.pf,.pw{width:100%;border-radius:0;border-left:none;border-right:none}.dh,.ms{display:none}body{padding:0}}
+</style>
+</head>
+<body>
+
+<div class="dh">
+  <h1>Linq<b>UID</b> Interactive Demo</h1>
+  <p>Tap any item to navigate • Full click-through of all screens</p>
+</div>
+
+<div class="ms">
+  <button class="mb active" onclick="mode('consumer',this)">👤 Consumer App</button>
+  <button class="mb" onclick="mode('merchant',this)">🛒 Merchant Demo</button>
+</div>
+
+<div class="pw">
+<div class="pf">
+  <div class="notch"><div class="ns"></div><div class="nc"></div></div>
+  <div class="sc">
+
+  <!-- ① SPLASH -->
+  <div class="s on" id="splash">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 22px;background:#fff">
+      <div style="width:110px;height:110px;border:5px solid var(--r);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:pu 2s ease-in-out infinite;margin-bottom:10px">
+        <div style="width:82px;height:82px;border:3px solid var(--r);border-radius:50%;opacity:.35"></div>
+      </div>
+      <div style="font-size:66px;font-weight:900;letter-spacing:-2px;line-height:1"><span style="color:var(--dk)">q</span><span style="color:var(--r)">UID</span></div>
+      <p style="font-size:13px;color:var(--gr);text-align:center;max-width:230px;margin:13px auto 0;line-height:1.5">Your Social Commerce app where you get <strong style="color:var(--r)">rewarded for who you are</strong></p>
+      <div class="logo" style="margin-top:28px;font-size:17px"><span class="ln">Linq</span><span class="u">UID</span></div>
+      <p style="font-size:10px;color:var(--gr);margin-top:2px">Where your social identity opens doors</p>
+      <button class="bp" style="margin-top:36px;padding:15px 55px;border-radius:28px;width:auto" onclick="go('welcome')">Get Started →</button>
+    </div>
+  </div>
+
+  <!-- ② WELCOME -->
+  <div class="s" id="welcome">
+    <div class="sb"><span>9:41</span><span>📶🔋</span></div>
+    <div class="scr" style="padding:8px 20px 20px">
+      <div style="text-align:center;margin-bottom:20px"><div class="logo" style="font-size:20px"><span class="ln">Linq</span><span class="u">UID</span></div></div>
+      <h2 style="font-size:26px;font-weight:700;margin-bottom:3px">Hello.</h2>
+      <p style="font-size:15px;color:var(--r);font-weight:600;margin-bottom:20px">Please login or create an account</p>
+      <div class="cs">
+        <div class="ch">I want to…</div>
+        <div class="ci">
+          <div class="cx" onclick="go('login')"><div class="ck">🔐</div><div class="ct"><h3>Login</h3><p>Access my existing account</p></div><span class="cv">›</span></div>
+          <div class="cx" onclick="go('signup')"><div class="ck">👤</div><div class="ct"><h3>Create an account</h3><p>Start your qUID journey</p></div><span class="cv">›</span></div>
+        </div>
+      </div>
+      <div class="cs" style="background:#444">
+        <div class="ch" style="border-color:rgba(255,255,255,.1)">Other Actions</div>
+        <div class="ci">
+          <div class="cx" onclick="go('manage')"><div class="ck" style="background:#555">☰</div><div class="ct"><h3>Manage My Account</h3></div><span class="cv">›</span></div>
+          <div class="cx" onclick="go('help')"><div class="ck" style="background:#555">❓</div><div class="ct"><h3>Get Some Help</h3></div><span class="cv">›</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bl"><span class="ln">Linq</span><span class="u">UID</span></div>
+  </div>
+
+  <!-- ③ LOGIN -->
+  <div class="s" id="login">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Login</h2></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div style="text-align:center;margin-bottom:22px;font-size:52px;font-weight:900;letter-spacing:-2px"><span style="color:var(--dk)">q</span><span style="color:var(--r)">UID</span></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" type="email" value="staveau@gmail.com"></div>
+      <div class="fg"><label class="fl">Password</label><input class="fi" type="password" value="password"></div>
+      <button class="bp" onclick="go('dash')">Login →</button>
+      <div class="fd">or</div>
+      <button class="bs" onclick="go('signup')">Create Account</button>
+      <p style="text-align:center;font-size:12px;color:var(--r);margin-top:14px;cursor:pointer">Forgot password?</p>
+    </div>
+  </div>
+
+  <!-- ④ SIGN UP -->
+  <div class="s" id="signup">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Create Account</h2></div>
+    <div class="sti"><div class="std cr"></div><div class="std"></div><div class="std"></div></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div class="fg"><label class="fl">First Name</label><input class="fi" type="text" value="Sebastien"></div>
+      <div class="fg"><label class="fl">Last Name</label><input class="fi" type="text" value="Taveau"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" type="email" value="staveau@gmail.com"></div>
+      <div class="fg"><label class="fl">Mobile</label><input class="fi" type="tel" placeholder="+1 (555) 000-0000"></div>
+      <button class="bp" onclick="go('verify')">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ⑤ VERIFY -->
+  <div class="s" id="verify">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Verify Email</h2></div>
+    <div class="sti"><div class="std dn"></div><div class="std cr"></div><div class="std"></div></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <p style="font-size:13px;color:var(--gr)">We sent a 6-digit code to:</p>
+      <p style="font-size:14px;font-weight:700;margin:4px 0 3px">staveau@gmail.com</p>
+      <p style="font-size:11px;color:var(--gr);margin-bottom:4px">Enter it below within 10 minutes</p>
+      <div class="ci2"><input class="cc" maxlength="1" value="4"><input class="cc" maxlength="1" value="7"><input class="cc" maxlength="1" value="3"><input class="cc" maxlength="1" value="9"><input class="cc" maxlength="1" value="2"><input class="cc" maxlength="1" value="1"></div>
+      <button class="bp" onclick="go('dash')">Verify & Continue →</button>
+      <p style="text-align:center;font-size:12px;color:var(--gr);margin-top:14px">Didn't receive it? <span style="color:var(--r);cursor:pointer">Resend code</span></p>
+    </div>
+  </div>
+
+  <!-- ⑥ DASHBOARD -->
+  <div class="s" id="dash">
+    <div class="sb"><span>9:41</span><span>📶🔋</span></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:6px 20px 10px;background:#fff;flex-shrink:0">
+      <div>
+        <h2 style="font-size:22px;font-weight:700">Hello Sebastien.</h2>
+        <p style="font-size:13px;color:var(--gr);margin-top:3px">Your <span style="font-weight:800;color:var(--dk)">q</span><span style="font-weight:800;color:var(--r)">UID</span> score is <span id="dsn" style="color:var(--r);font-weight:700">2</span></p>
+        <span id="dtag" style="display:inline-block;background:var(--rl);color:var(--r);font-size:10px;font-weight:600;padding:2px 9px;border-radius:9px;margin-top:3px">new user</span>
+      </div>
+      <div id="dbadge" class="lb l2" style="width:52px;height:52px;font-size:20px">2</div>
+    </div>
+    <div class="pb"><div id="dbar" class="pbf" style="width:20%"></div></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div class="cs">
+        <div class="ch">I want to…</div>
+        <div class="ci">
+          <div class="cx" onclick="go('share')"><div class="ck">💬</div><div class="ct"><h3>Share my Identity</h3><p>Share your qUID with merchants</p></div><span class="cv">›</span></div>
+          <div class="cx" onclick="go('invite')"><div class="ck">👥</div><div class="ct"><h3>Invite Friends</h3><p>Grow your social network</p></div><span class="cv">›</span></div>
+          <div class="cx" onclick="go('levels')"><div class="ck">📈</div><div class="ct"><h3>Increase My Level</h3><p>Unlock better offers &amp; perks</p></div><span class="cv">›</span></div>
+        </div>
+      </div>
+      <div class="cs" style="background:#444">
+        <div class="ch" style="border-color:rgba(255,255,255,.1)">Other Actions</div>
+        <div class="ci">
+          <div class="cx" onclick="go('manage')"><div class="ck" style="background:#555">☰</div><div class="ct"><h3>Manage My Account</h3></div><span class="cv">›</span></div>
+          <div class="cx" onclick="go('help')"><div class="ck" style="background:#555">❓</div><div class="ct"><h3>Get Some Help</h3></div><span class="cv">›</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bl"><span class="ln">Linq</span><span class="u">UID</span></div>
+  </div>
+
+  <!-- ⑦ SHARE IDENTITY -->
+  <div class="s" id="share">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Share my Identity</h2></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div class="ib">Share your qUID profile with merchants to unlock personalized offers and faster checkout.</div>
+      <p style="font-size:13px;color:var(--gr);margin-bottom:13px">Choose your sharing level:</p>
+      <div class="lc act" onclick="sel(this)"><div class="lb l1" style="width:40px;height:40px;font-size:16px">1</div><div class="lct"><h3>qUID Level 1 — Basic</h3><p>Name, email only. Minimum sharing.</p></div><input type="radio" name="sl" style="accent-color:var(--r)"></div>
+      <div class="lc" onclick="sel(this)"><div class="lb l2" style="width:40px;height:40px;font-size:16px">2</div><div class="lct"><h3>qUID Level 2 ★ Your default</h3><p>+ Address, phone. Recommended.</p></div><input type="radio" name="sl" style="accent-color:var(--r)" checked></div>
+      <div class="lc" onclick="sel(this)"><div class="lb l3" style="width:40px;height:40px;font-size:16px">3</div><div class="lct"><h3>qUID Level 3 — Social Links</h3><p>+ Social media &amp; verified contacts.</p></div><input type="radio" name="sl" style="accent-color:var(--r)"></div>
+      <div class="lc" onclick="sel(this)"><div class="lb l4" style="width:40px;height:40px;font-size:16px">4</div><div class="lct"><h3>qUID Level 4 — Financial</h3><p>+ Bank account. Unlocks premium offers.</p></div><input type="radio" name="sl" style="accent-color:var(--r)"></div>
+      <button class="bp" style="margin-top:6px" onclick="go('shareok')">Share Profile →</button>
+    </div>
+  </div>
+
+  <!-- ⑧ SHARE CONFIRM -->
+  <div class="s" id="shareok">
+    <div class="sb"><span>9:41</span><span>📶🔋</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center">
+      <div style="width:76px;height:76px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin-bottom:18px;box-shadow:0 6px 22px rgba(39,174,96,.35)">✓</div>
+      <h2 style="font-size:21px;font-weight:800;margin-bottom:7px">Identity Shared!</h2>
+      <p style="font-size:13px;color:var(--gr);line-height:1.6;margin-bottom:18px">Your <strong>qUID Level 2</strong> profile has been shared.<br>This activity has been securely recorded.</p>
+      <div style="background:var(--lt);border-radius:14px;padding:14px;width:100%;text-align:left;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span style="font-size:18px">🏪</span><div><div style="font-size:13px;font-weight:700">Merchant</div><div style="font-size:11px;color:var(--gr)">Shared at 9:41 AM today</div></div></div>
+        <div style="font-size:12px;color:var(--gr);border-top:1px solid var(--bd);padding-top:9px">✅ Recorded on secure ledger<br>✅ Revoke access anytime in Catalog</div>
+      </div>
+      <button class="bp" style="width:100%" onclick="go('dash')">Back to Home</button>
+    </div>
+    <div class="bl"><span class="ln">Linq</span><span class="u">UID</span></div>
+  </div>
+
+  <!-- ⑨ INVITE FRIENDS -->
+  <div class="s" id="invite">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Invite Friends</h2></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div class="ib">Invite friends and boost your social trust score. Earn bonus points when they join!</div>
+      <button class="sob" onclick="go('contacts')"><span class="soi">👥</span><div class="sot"><h3>From Address Book</h3><p>Select contacts from your phone</p></div><span style="color:var(--gr)">›</span></button>
+      <button class="sob" onclick="go('invman')"><span class="soi">✉️</span><div class="sot"><h3>Enter Manually</h3><p>Type a phone number or email</p></div><span style="color:var(--gr)">›</span></button>
+      <button class="sob" onclick="toast2('Invite link copied to clipboard! 📋')"><span class="soi">🔗</span><div class="sot"><h3>Share Invite Link</h3><p>Send via any messaging app</p></div><span style="color:var(--gr)">›</span></button>
+    </div>
+  </div>
+
+  <!-- ⑩ CONTACTS -->
+  <div class="s" id="contacts">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Select Contacts</h2></div>
+    <p class="hint">Select up to 5 contacts. First 5 become your "vouching friends".</p>
+    <div class="scr" style="padding:0 20px">
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:var(--r)">MR</div><div style="flex:1"><div style="font-size:14px;font-weight:600">Marie Rousseau</div><div style="font-size:11px;color:var(--gr)">+1 (415) 555-0101</div></div><div class="cch">✓</div></div>
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:#5A9E00">JL</div><div style="flex:1"><div style="font-size:14px;font-weight:600">James Liu</div><div style="font-size:11px;color:var(--gr)">+1 (415) 555-0122</div></div><div class="cch chk">✓</div></div>
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:#0071DC">SB</div><div style="flex:1"><div style="font-size:14px;font-weight:600">Sarah Bellamy</div><div style="font-size:11px;color:var(--gr)">sarah@email.com</div></div><div class="cch">✓</div></div>
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:#8B5CF6">TP</div><div style="flex:1"><div style="font-size:14px;font-weight:600">Thomas Park</div><div style="font-size:11px;color:var(--gr)">+1 (628) 555-0188</div></div><div class="cch chk">✓</div></div>
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:#EC4899">AL</div><div style="flex:1"><div style="font-size:14px;font-weight:600">Aisha Lennox</div><div style="font-size:11px;color:var(--gr)">+1 (510) 555-0133</div></div><div class="cch">✓</div></div>
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:#F59E0B">DC</div><div style="flex:1"><div style="font-size:14px;font-weight:600">David Chen</div><div style="font-size:11px;color:var(--gr)">dchen@work.com</div></div><div class="cch">✓</div></div>
+      <div class="con" onclick="tog(this)"><div class="cav" style="background:#14B8A6">NK</div><div style="flex:1"><div style="font-size:14px;font-weight:600">Nina Kim</div><div style="font-size:11px;color:var(--gr)">+1 (650) 555-0177</div></div><div class="cch">✓</div></div>
+    </div>
+    <div style="padding:12px 20px"><button class="bp" onclick="go('invsent')">Send Invites (2 selected) →</button></div>
+  </div>
+
+  <!-- ⑪ INVITE MANUAL -->
+  <div class="s" id="invman">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Send Invite</h2></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div class="fg"><label class="fl">Phone or Email</label><input class="fi" type="text" placeholder="+1 (555) 000-0000 or email@example.com"></div>
+      <div class="fg"><label class="fl">Personal message (optional)</label><textarea class="fi" rows="3">Hey! I've been using LinqUID — your social identity actually gets you better deals! 🎉</textarea></div>
+      <button class="bp" onclick="go('invsent')">Send Invite →</button>
+    </div>
+  </div>
+
+  <!-- ⑫ INVITE SENT -->
+  <div class="s" id="invsent">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center">
+      <div style="width:76px;height:76px;background:var(--r);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;margin-bottom:18px">✉️</div>
+      <h2 style="font-size:21px;font-weight:800;margin-bottom:7px">Invites Sent!</h2>
+      <p style="font-size:13px;color:var(--gr);line-height:1.6;margin-bottom:18px">Your friends will receive an invitation to join LinqUID. When they sign up, your qUID score increases!</p>
+      <div style="background:var(--rl);border-radius:13px;padding:14px;width:100%;margin-bottom:18px"><p style="font-size:12px;color:var(--r);font-weight:600">🎁 You'll earn +0.5 score for each friend who joins!</p></div>
+      <button class="bp" style="width:100%" onclick="go('dash')">Back to Home</button>
+    </div>
+  </div>
+
+  <!-- ⑬ INCREASE LEVEL -->
+  <div class="s" id="levels">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Increase My Level</h2></div>
+    <p style="font-size:12px;color:var(--gr);padding:0 20px 13px">Verify more about yourself to unlock better merchant offers.</p>
+    <div class="scr" style="padding:0 20px 20px">
+      <div class="lc act"><div class="lb l1" style="width:40px;height:40px;font-size:16px">1</div><div class="lct"><h3>qUID Level 1 — Basic ✓ Done</h3><p>Name, email, account creation at enrollment.</p></div></div>
+      <div class="lc" onclick="go('lvl2')"><div class="lb l2" style="width:40px;height:40px;font-size:16px">2</div><div class="lct"><h3>qUID Level 2 — Verified Contact</h3><p>Confirm email + add mobile number.</p></div><span style="color:var(--r);font-size:12px;font-weight:600;white-space:nowrap">Start →</span></div>
+      <div class="lc" style="opacity:.55"><div class="lb l3" style="width:40px;height:40px;font-size:16px">3</div><div class="lct"><h3>qUID Level 3 — Social Links</h3><p>Link a social media or email account.</p></div><span style="font-size:13px">🔒</span></div>
+      <div class="lc" style="opacity:.55"><div class="lb l4" style="width:40px;height:40px;font-size:16px">4</div><div class="lct"><h3>qUID Level 4 — Financial</h3><p>Bank verification via Plaid or Yodlee.</p></div><span style="font-size:13px">🔒</span></div>
+      <div class="lc" style="opacity:.55"><div class="lb l5" style="width:40px;height:40px;font-size:16px">5</div><div class="lct"><h3>qUID Level 5 — Government ID</h3><p>DMV, Global ID, or Web3 ID verification.</p></div><span style="font-size:13px">🔒</span></div>
+    </div>
+  </div>
+
+  <!-- ⑭ LEVEL 2 STEPS -->
+  <div class="s" id="lvl2">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Level 2: Verify Contact</h2></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <div style="background:#E05A00;border-radius:14px;padding:18px;color:#fff;text-align:center;margin-bottom:18px"><div style="font-size:38px;font-weight:900;line-height:1">2</div><div style="font-size:13px;opacity:.9">Verified Contact</div></div>
+      <div class="cs">
+        <div class="ch">Step 1: Confirm Email</div>
+        <div class="ci" style="padding:13px 16px">
+          <p style="font-size:12px;color:var(--gr);margin-bottom:9px">Code sent to staveau@gmail.com</p>
+          <div style="background:var(--lt);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--g);display:flex;align-items:center;gap:5px">✅ Email verified successfully!</div>
+        </div>
+      </div>
+      <div class="cs" style="margin-top:12px">
+        <div class="ch">Step 2: Add Mobile Number</div>
+        <div class="ci" style="padding:13px 16px">
+          <input class="fi" type="tel" value="+1 (415) 555-0191" style="margin-bottom:10px">
+          <button class="bp" onclick="go('lvlver')">Send Verification SMS →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑮ LEVEL 2 VERIFY MOBILE -->
+  <div class="s" id="lvlver">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Verify Mobile</h2></div>
+    <div class="scr" style="padding:0 20px 20px">
+      <p style="font-size:13px;color:var(--gr)">Enter the code sent to:</p>
+      <p style="font-size:14px;font-weight:700;margin:4px 0 22px">+1 (415) 555-0191</p>
+      <div class="ci2"><input class="cc" maxlength="1" value="8"><input class="cc" maxlength="1" value="3"><input class="cc" maxlength="1" value="7"><input class="cc" maxlength="1" value="1"><input class="cc" maxlength="1" value="5"><input class="cc" maxlength="1" value="2"></div>
+      <button class="bp" onclick="upgL2()">Complete Level 2 Verification →</button>
+    </div>
+  </div>
+
+  <!-- ⑯ MANAGE ACCOUNT -->
+  <div class="s" id="manage">
+    <div class="sb"><span>9:41</span><span>📶🔋</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 20px 14px;background:#fff;flex-shrink:0">
+      <button class="bb" onclick="back()">‹</button>
+      <h2 style="font-size:19px;font-weight:700;flex:1">Hello Sebastien.</h2>
+      <div id="mbadge" class="lb l2" style="width:38px;height:38px;font-size:15px">2</div>
+    </div>
+    <div class="cs" style="margin:14px 20px;border-radius:13px"><div class="ch">☰ Manage My Account</div></div>
+    <div style="background:#fff;border-radius:14px;margin:0 20px;overflow:hidden;border:1px solid var(--bd)">
+      <div class="cx" onclick="go('catalog')"><div class="ck">🤝</div><div class="ct"><h3>Share my identity once</h3><p>One-time merchant sharing</p></div><span class="cv">›</span></div>
+      <div class="cx" onclick="toast2('Anonymize request submitted. Processing…')"><div class="ck">🫥</div><div class="ct"><h3>Anonymize</h3><p>Remove data from all merchants</p></div><span class="cv">›</span></div>
+      <div class="cx" onclick="toast2('Report submitted. We\'ll review within 24 hours.')"><div class="ck">🚫</div><div class="ct"><h3>Block / Report</h3><p>Block a merchant or report abuse</p></div><span class="cv">›</span></div>
+      <div class="cx" onclick="go('catalog')"><div class="ck">📚</div><div class="ct"><h3>Manage Catalog</h3><p>Control who has your qUID</p></div><span class="cv">›</span></div>
+    </div>
+    <div class="bl" style="margin-top:auto"><span class="ln">Linq</span><span class="u">UID</span></div>
+  </div>
+
+  <!-- ⑰ CATALOG -->
+  <div class="s" id="catalog">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Manage Catalog</h2></div>
+    <p style="font-size:12px;color:var(--gr);padding:0 20px 12px">Retailers you've shared your qUID with. Toggle to revoke access.</p>
+    <div class="scr">
+      <div class="cat"><div class="rl" style="background:#0071DC;color:#fff;font-size:14px">W</div><div class="cai"><h3>Walmart</h3><p>Level 2 · Shared Mar 2026</p></div><label class="ts"><input type="checkbox" checked onchange="toast2('Walmart access updated')"><span class="tsl"></span></label></div>
+      <div class="cat"><div class="rl" style="background:#FF9900;color:#fff">A</div><div class="cai"><h3>Amazon</h3><p>Level 1 · Shared Jan 2026</p></div><label class="ts"><input type="checkbox" checked onchange="toast2('Amazon access updated')"><span class="tsl"></span></label></div>
+      <div class="cat"><div class="rl" style="background:#CC0000;color:#fff;font-size:10px">TGT</div><div class="cai"><h3>Target</h3><p>Level 2 · Shared Feb 2026</p></div><label class="ts"><input type="checkbox" onchange="toast2('Target access updated')"><span class="tsl"></span></label></div>
+      <div class="cat"><div class="rl" style="background:#000;color:#fff;font-size:10px">NIKE</div><div class="cai"><h3>Nike</h3><p>Level 3 · Shared Dec 2025</p></div><label class="ts"><input type="checkbox" checked onchange="toast2('Nike access updated')"><span class="tsl"></span></label></div>
+      <div class="cat"><div class="rl" style="background:#E31837;color:#fff;font-size:9px">KOHL</div><div class="cai"><h3>Kohl's</h3><p>Level 1 · Shared Nov 2025</p></div><label class="ts"><input type="checkbox" checked onchange="toast2('Kohl\'s access updated')"><span class="tsl"></span></label></div>
+    </div>
+  </div>
+
+  <!-- ⑱ HELP -->
+  <div class="s" id="help">
+    <div class="sn"><button class="bb" onclick="back()">‹</button><h2>Get Some Help</h2></div>
+    <div class="scr">
+      <div class="hi"><div class="hii">🔐</div><div class="hit"><h3>What is qUID?</h3><p>Your verified social identity score that unlocks personalized offers and faster checkout across merchants.</p></div></div>
+      <div class="hi"><div class="hii">🌟</div><div class="hit"><h3>How do I increase my level?</h3><p>Verify more about yourself — email, mobile, social accounts, and financial data — to unlock higher levels.</p></div></div>
+      <div class="hi"><div class="hii">🛡️</div><div class="hit"><h3>Is my data safe?</h3><p>Yes. You always control what's shared. All sharing is recorded with your consent and revocable anytime.</p></div></div>
+      <div class="hi"><div class="hii">💰</div><div class="hit"><h3>How do I earn rewards?</h3><p>Share identity with merchants, invite friends, and increase your level for exclusive discounts &amp; cashback.</p></div></div>
+      <div class="hi"><div class="hii">📞</div><div class="hit"><h3>Contact Support</h3><p>Email: support@linquid.com<br>Mon–Fri, 9am–6pm PST</p></div></div>
+    </div>
+  </div>
+
+  <!-- ─────────── MERCHANT DEMO ─────────── -->
+
+  <!-- ⑲ WALMART PRODUCT PAGE -->
+  <div class="s" id="walmart">
+    <div class="wh">
+      <span style="color:#fff;font-weight:900;font-size:22px">★</span>
+      <div class="ws"><span>🔍</span><span style="font-size:12px">Solar eclipse glasses</span></div>
+      <span style="color:#fff;font-size:20px;margin-left:7px">🛒</span>
+    </div>
+    <div class="mn"><div class="act">All Depts</div><div>Grocery</div><div>Electronics</div><div>Fashion</div><div>Home</div></div>
+    <div class="scr">
+      <div class="pi">🕶️</div>
+      <div class="pp">
+        <div style="font-size:11px;color:#0071DC;font-weight:600">Medical King</div>
+        <div style="font-size:14px;font-weight:600;margin:3px 0;line-height:1.4">Solar Eclipse Glasses 10 Pack — CE &amp; ISO Certified Safe Shades</div>
+        <div style="color:#FFC220;font-size:12px;margin-bottom:7px">★★★★☆ <span style="color:var(--gr)">(32)</span></div>
+        <div style="font-size:26px;font-weight:700">$29.99</div>
+        <p style="font-size:11px;color:var(--gr);margin:3px 0 10px">Price when purchased online</p>
+        <button class="wab">Add to cart</button>
+        <div class="lw" onclick="go('lqchk')">
+          <div><p style="font-size:10px;color:var(--gr)">Fast Checkout with</p><p style="font-size:13px;font-weight:800"><span style="color:var(--dk)">Linq</span><span style="color:var(--r)">UID</span> →</p></div>
+          <div style="margin-left:auto;background:var(--r);color:#fff;padding:7px 15px;border-radius:18px;font-size:13px;font-weight:700">1-tap</div>
+        </div>
+        <div style="background:var(--lt);border-radius:11px;padding:11px 13px">
+          <p style="font-size:11px;color:var(--gr)">📦 Count: <strong style="color:var(--dk)">10</strong></p>
+          <div style="display:flex;gap:7px;margin-top:7px;flex-wrap:wrap">
+            <div style="padding:5px 10px;border:1px solid var(--bd);border-radius:6px;font-size:11px">2 · $14.99</div>
+            <div style="padding:5px 10px;border:1px solid var(--bd);border-radius:6px;font-size:11px">5 · $19.99</div>
+            <div style="padding:5px 10px;background:var(--dk);color:#fff;border-radius:6px;font-size:11px;font-weight:700">10 · $29.99</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑳ LINQUID CHECKOUT (on Walmart) -->
+  <div class="s" id="lqchk" style="background:#fff">
+    <div style="text-align:center;padding:44px 22px 16px;border-bottom:1px solid var(--bd);flex-shrink:0">
+      <div style="font-size:26px;color:#0071DC;font-weight:900;margin-bottom:3px">★ Walmart</div>
+      <p style="font-size:11px;color:var(--gr)">Secure checkout powered by</p>
+      <div style="font-size:15px;font-weight:800;margin-top:3px"><span style="color:var(--dk)">Linq</span><span style="color:var(--r)">UID</span></div>
+    </div>
+    <div class="scr" style="padding:16px 20px 20px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div class="lb l2" style="width:66px;height:66px;font-size:26px;margin:0 auto 7px">2</div>
+        <p style="font-size:14px;font-weight:600">You have shared your LinqUID <span style="color:var(--r);font-weight:700">level 2.</span></p>
+      </div>
+      <div class="ob">
+        <div style="font-size:22px;font-weight:800;color:var(--r)">🎁 Special Offer</div>
+        <h3 style="margin-top:7px">Upgrade for more perks!</h3>
+        <p>Share your <strong>qUID Level 4</strong> from your mobile app and get:</p>
+        <p style="margin-top:7px">✅ <strong>Free shipping</strong> on this order<br>✅ An additional <strong style="color:var(--r)">10% off</strong> your total</p>
+      </div>
+      <button class="bp" style="margin-bottom:10px" onclick="go('notif')">Agree — Share Level 4 on Phone →</button>
+      <button class="bs" onclick="go('orderdone')">Decline — Continue at Level 2</button>
+    </div>
+  </div>
+
+  <!-- ㉑ PHONE LOCK SCREEN NOTIFICATION -->
+  <div class="s ns2" id="notif">
+    <div style="text-align:center;padding:46px 0 10px;color:#fff">
+      <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:3px">Tuesday, March 3</p>
+      <p style="font-size:68px;font-weight:200;letter-spacing:-3px;color:#fff;line-height:1">9:41</p>
+    </div>
+    <div class="nc2" onclick="go('appshare')">
+      <div class="nch">
+        <div class="nai">LQ</div>
+        <span style="font-size:12px;font-weight:600;flex:1;color:#fff">LinqUID</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.5)">now</span>
+      </div>
+      <div style="font-size:13px;line-height:1.5;color:rgba(255,255,255,.9)">
+        <strong>🛒 Walmart is requesting Level 4</strong><br>
+        Share now to unlock free shipping + 10% off!
+      </div>
+      <div class="na">
+        <button class="nabt" onclick="go('orderdone');event.stopPropagation()">Decline</button>
+        <button class="nabt pri" onclick="go('appshare');event.stopPropagation()">Open LinqUID →</button>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,.35);padding:10px">Tap notification or press "Open LinqUID"</p>
+    <div style="position:absolute;bottom:24px;left:0;right:0;display:flex;justify-content:center"><div style="width:120px;height:5px;background:rgba(255,255,255,.25);border-radius:3px"></div></div>
+  </div>
+
+  <!-- ㉒ APP: CONFIRM SHARE LEVEL 4 -->
+  <div class="s" id="appshare">
+    <div class="sb"><span>9:41</span><span>📶🔋</span></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:6px 20px 10px;background:#fff;flex-shrink:0">
+      <div><h2 style="font-size:22px;font-weight:700">Hello Sebastien.</h2><p style="font-size:13px;color:var(--gr);margin-top:3px">Your <span style="font-weight:800;color:var(--dk)">q</span><span style="font-weight:800;color:var(--r)">UID</span> score is <span style="color:var(--r);font-weight:700">4</span></p></div>
+      <div class="lb l4" style="width:52px;height:52px;font-size:20px">4</div>
+    </div>
+    <div style="background:#FFF9F0;border:1px solid #FFD580;border-radius:13px;margin:0 20px 14px;padding:12px 15px">
+      <div style="font-size:12px;font-weight:700;color:#B45309;margin-bottom:3px">⚡ Walmart is requesting Level 4</div>
+      <div style="font-size:11px;color:#92400E;line-height:1.5">Share now to unlock free shipping + 10% off your order!</div>
+    </div>
+    <div class="slc">
+      <h3>Confirm sharing with Walmart</h3>
+      <div class="bn">4</div>
+      <p>qUID Level 4 — Financial Verified</p>
+    </div>
+    <div style="padding:0 20px">
+      <p style="font-size:12px;color:var(--gr);text-align:center;margin-bottom:14px;line-height:1.5">You are about to share your verified financial identity with Walmart. This is recorded on a secure ledger.</p>
+      <button class="bp" onclick="go('orderdone')">✓ Confirm — Share Level 4</button>
+      <button class="bs" onclick="go('orderdone')">Decline</button>
+    </div>
+    <div class="bl" style="margin-top:auto"><span class="ln">Linq</span><span class="u">UID</span></div>
+  </div>
+
+  <!-- ㉓ ORDER COMPLETE -->
+  <div class="s" id="orderdone" style="background:#fff;overflow-y:auto">
+    <div class="sb"><span>9:41</span><span>📶🔋</span></div>
+    <div style="padding:16px 22px;text-align:center">
+      <div class="ci3">✓</div>
+      <h2 style="font-size:24px;font-weight:800;margin-bottom:6px">Congratulations!</h2>
+      <p style="font-size:14px;color:var(--gr);margin-bottom:18px">Checkout complete</p>
+      <div class="od">
+        <div class="or"><span class="lb2">Order #</span><span style="font-weight:600">1234</span></div>
+        <div class="or"><span class="lb2">Shipping to</span><span>Seb Taveau</span></div>
+        <div style="font-size:12px;color:var(--gr);padding:3px 0 10px;border-bottom:1px solid var(--bd);margin-bottom:9px;text-align:right">123 Main Street<br>AnyCity, ST 99999</div>
+        <div class="or"><span class="lb2">Subtotal</span><span>$29.99</span></div>
+        <div class="or"><span class="lb2">Shipping</span><span style="color:var(--g)">FREE ✓</span></div>
+        <div class="or"><span class="lb2">qUID Discount</span><span style="color:var(--g)">−$3.00 (10%) ✓</span></div>
+        <div class="or" style="border-top:1px solid var(--bd);padding-top:8px;margin-top:4px;font-weight:700"><span>Total</span><span style="color:var(--r);font-size:17px">$26.99</span></div>
+      </div>
+      <div style="background:var(--lt);border-radius:11px;padding:11px 14px;margin-bottom:14px;font-size:12px;color:var(--gr);text-align:left">
+        📧 Confirmation sent to <strong style="color:var(--dk)">staveau@gmail.com</strong>
+      </div>
+      <div style="background:var(--rl);border-radius:11px;padding:11px 14px;margin-bottom:18px;font-size:11px;color:var(--r);text-align:left">
+        ✅ All info shared with merchant &amp; consumer consent<br>
+        ✅ Transaction recorded securely on ledger<br>
+        ✅ Revoke merchant access anytime in Catalog
+      </div>
+      <button class="bp" onclick="go('walmart')">Continue Shopping</button>
+      <button class="bs" onclick="mode('consumer',document.querySelector('.mb'))">Back to LinqUID App</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"><span>✓</span><span id="tmsg">Done</span></div>
+
+  </div><!-- sc -->
+</div><!-- pf -->
+</div><!-- pw -->
+
+<p style="text-align:center;color:#555;font-size:11px;margin-top:13px">👆 Tap any button or menu item to navigate through the demo</p>
+
+<style>@keyframes pu{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}</style>
+<script>
+const H=[];let C='splash';
+function go(id){
+  const o=document.getElementById(C),n=document.getElementById(id);
+  if(!n)return;
+  H.push(C);
+  o.classList.remove('on');o.style.display='none';
+  n.style.display='flex';n.classList.add('on');
+  n.scrollTop=0;C=id;
+}
+function back(){
+  if(!H.length)return;
+  const p=H.pop(),o=document.getElementById(C),pr=document.getElementById(p);
+  o.classList.remove('on');o.style.display='none';
+  pr.style.display='flex';pr.classList.add('on');C=p;
+}
+function sel(card){
+  document.querySelectorAll('#share .lc').forEach(c=>c.classList.remove('act'));
+  card.classList.add('act');
+  const r=card.querySelector('input[type=radio]');if(r)r.checked=true;
+}
+function tog(item){
+  const c=item.querySelector('.cch');c.classList.toggle('chk');
+}
+function toast2(msg){
+  const t=document.getElementById('toast'),m=document.getElementById('tmsg');
+  m.textContent=msg;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2600);
+}
+function upgL2(){
+  ['dbadge','mbadge'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.className='lb l2';el.style.width='52px';el.style.height='52px';el.style.fontSize='20px';el.textContent='2';}
+  });
+  const ds=document.getElementById('dsn');if(ds)ds.textContent='2';
+  const db=document.getElementById('dbar');if(db)db.style.width='40%';
+  const dt=document.getElementById('dtag');if(dt)dt.textContent='level 2';
+  toast2('🎉 Level 2 unlocked! Score updated.');
+  setTimeout(()=>{H.length=0;go('dash');},600);
+}
+function mode(m,btn){
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const o=document.getElementById(C);
+  o.classList.remove('on');o.style.display='none';
+  H.length=0;
+  const nid=m==='consumer'?'splash':'walmart';
+  C=nid;
+  const n=document.getElementById(nid);
+  n.style.display='flex';n.classList.add('on');
+}
+</script>
+</body>
+</html>

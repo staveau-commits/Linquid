@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinqUID — Demo Suite</title>
+<style>
+  :root {
+    --navy: #0F2741;
+    --navy2: #162f4d;
+    --red: #FF0000;
+    --orange: #FF6600;
+    --blue: #0070C0;
+    --green: #00B050;
+    --grey: #A6A7A7;
+    --dark: #1D2228;
+    --mid: #404040;
+    --bg: #F4F6FA;
+    --white: #FFFFFF;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; height: 64px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .nav-logo-badge {
+    width: 40px; height: 40px; background: white; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  }
+  .nav-logo-badge span { font-size: 10px; font-weight: 900; letter-spacing: -1px; }
+  .nav-wordmark { font-size: 24px; font-weight: 900; }
+  .nav-wordmark .linq { color: white; }
+  .nav-wordmark .u    { color: rgba(255,255,255,0.3); }
+  .nav-wordmark .id   { color: var(--red); }
+  .nav-pill {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.7); padding: 5px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(140deg, #080f1a 0%, #0F2741 50%, #0d2238 100%);
+    color: white;
+    padding: 100px 60px 90px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 60%, rgba(255,0,0,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 30%, rgba(0,112,192,0.07) 0%, transparent 55%);
+  }
+  .hero-inner { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,0,0,0.12); border: 1px solid rgba(255,0,0,0.35);
+    color: #ff6666; padding: 5px 16px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .hero-dot { width: 6px; height: 6px; background: #ff4444; border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .hero h1 {
+    font-size: 60px; font-weight: 900; line-height: 1.0; margin-bottom: 22px;
+    letter-spacing: -1px;
+  }
+  .hero h1 .linq { color: white; }
+  .hero h1 .u    { color: rgba(255,255,255,0.25); }
+  .hero h1 .id   { color: var(--red); }
+  .hero-sub {
+    font-size: 18px; color: rgba(255,255,255,0.62); line-height: 1.65;
+    max-width: 600px; margin: 0 auto 48px;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 52px; flex-wrap: wrap;
+    padding-top: 48px; border-top: 1px solid rgba(255,255,255,0.1);
+    margin-top: 16px;
+  }
+  .hs-num { font-size: 34px; font-weight: 900; color: var(--red); line-height: 1; }
+  .hs-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; line-height: 1.5; }
+
+  /* ── DEMO GRID ── */
+  .demos-section {
+    padding: 80px 60px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-tag {
+    font-size: 10px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--red); margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 34px; font-weight: 900; color: var(--navy); margin-bottom: 10px;
+  }
+  .section-sub {
+    font-size: 15px; color: var(--mid); line-height: 1.65;
+    max-width: 560px; margin-bottom: 52px;
+  }
+  .demos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .demo-card {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex; flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .demo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  }
+  .demo-card-top {
+    padding: 36px 32px;
+    display: flex; flex-direction: column; gap: 0;
+    flex: 1;
+  }
+  .demo-card-accent { height: 4px; }
+  .demo-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 4px 11px; border-radius: 20px;
+    margin-bottom: 20px; width: fit-content;
+  }
+  .demo-icon { font-size: 38px; margin-bottom: 16px; }
+  .demo-card h2 {
+    font-size: 22px; font-weight: 800; color: var(--navy);
+    margin-bottom: 10px; line-height: 1.2;
+  }
+  .demo-card p {
+    font-size: 14px; color: var(--mid); line-height: 1.65; flex: 1;
+  }
+  .demo-card-footer {
+    padding: 18px 32px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fafbfc;
+  }
+  .demo-features { display: flex; gap: 8px; flex-wrap: wrap; }
+  .demo-feat-pill {
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+    background: #f0f0f0; color: var(--mid);
+  }
+  .demo-arrow {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .demo-card:hover .demo-arrow { transform: translateX(4px); }
+
+  /* Card color variants */
+  .card-red   .demo-card-accent { background: var(--red); }
+  .card-red   .demo-tag { background: rgba(255,0,0,0.1); color: var(--red); }
+  .card-red   .demo-arrow { background: var(--red); color: white; }
+
+  .card-navy  .demo-card-accent { background: var(--navy); }
+  .card-navy  .demo-tag { background: rgba(15,39,65,0.1); color: var(--navy); }
+  .card-navy  .demo-arrow { background: var(--navy); color: white; }
+
+  .card-blue  .demo-card-accent { background: var(--blue); }
+  .card-blue  .demo-tag { background: rgba(0,112,192,0.1); color: var(--blue); }
+  .card-blue  .demo-arrow { background: var(--blue); color: white; }
+
+  .card-green .demo-card-accent { background: var(--green); }
+  .card-green .demo-tag { background: rgba(0,176,80,0.1); color: var(--green); }
+  .card-green .demo-arrow { background: var(--green); color: white; }
+
+  /* ── ABOUT SECTION ── */
+  .about-section {
+    background: var(--navy);
+    color: white;
+    padding: 80px 60px;
+  }
+  .about-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  }
+  .about-left .stag { font-size: 10px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,100,100,0.9); margin-bottom: 12px; }
+  .about-left h2 { font-size: 36px; font-weight: 900; margin-bottom: 18px; line-height: 1.1; }
+  .about-left h2 .linq { color: white; }
+  .about-left h2 .u    { color: rgba(255,255,255,0.25); }
+  .about-left h2 .id   { color: var(--red); }
+  .about-left p { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-bottom: 14px; }
+  .about-contact {
+    margin-top: 28px; padding: 20px 22px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+  }
+  .about-contact .name { font-size: 16px; font-weight: 700; color: white; margin-bottom: 4px; }
+  .about-contact .role { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 12px; }
+  .about-contact a { color: rgba(255,255,255,0.7); font-size: 13px; text-decoration: none; }
+  .about-contact a:hover { color: white; }
+  .about-right { display: flex; flex-direction: column; gap: 16px; }
+  .about-stat-card {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 20px 22px;
+    border-left: 4px solid var(--red);
+  }
+  .about-stat-card:nth-child(2) { border-left-color: var(--blue); }
+  .about-stat-card:nth-child(3) { border-left-color: var(--green); }
+  .about-stat-num { font-size: 30px; font-weight: 900; color: white; line-height: 1; margin-bottom: 5px; }
+  .about-stat-label { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #080f1a;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    padding: 28px 40px;
+    font-size: 12px;
+  }
+  footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+  footer a:hover { color: white; }
+  footer .footer-brand { font-weight: 700; }
+  footer .footer-brand .linq { color: rgba(255,255,255,0.6); }
+  footer .footer-brand .u    { color: rgba(255,255,255,0.2); }
+  footer .footer-brand .id   { color: var(--red); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 860px) {
+    .hero { padding: 70px 28px 60px; }
+    .hero h1 { font-size: 40px; }
+    .demos-section { padding: 56px 24px; }
+    .demos-grid { grid-template-columns: 1fr; }
+    .hero-stats { gap: 28px; }
+    .about-inner { grid-template-columns: 1fr; gap: 40px; }
+    .about-section { padding: 56px 28px; }
+    nav { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#">
+    <div class="nav-logo-badge">
+      <span><span style="color:#000">Lq</span><span style="color:#FF0000">ID</span></span>
+    </div>
+    <div class="nav-wordmark">
+      <span class="linq">Linq</span><span class="u">U</span><span class="id">ID</span>
+    </div>
+  </a>
+  <div class="nav-pill">Demo Suite · 2026</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <div class="hero-dot"></div>
+      Interactive Demo Suite
+    </div>
+    <h1>
+      <span class="linq">Linq</span><span class="u">U</span><span class="id">ID</span>
+    </h1>
+    <p class="hero-sub">
+      Commerce Profile based on Social Identity. The identity layer that connects your social presence to purchasing trust — for consumers, merchants, and AI agents alike.
+    </p>
+    <a href="#demos" style="display:inline-block;background:var(--red);color:white;padding:14px 36px;border-radius:30px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 20px rgba(255,0,0,0.3);transition:all 0.2s;" onmouseover="this.style.background='#cc0000'" onmouseout="this.style.background='var(--red)'">
+      Explore the Demos →
+    </a>
+    <div class="hero-stats">
+      <div>
+        <div class="hs-num">Q1–Q5</div>
+        <div class="hs-label">Identity Trust<br>Levels</div>
+      </div>
+      <div>
+        <div class="hs-num">14 → 3</div>
+        <div class="hs-label">Checkout Steps<br>Reduced</div>
+      </div>
+      <div>
+        <div class="hs-num">$29</div>
+        <div class="hs-label">CAC Saved<br>Per Order</div>
+      </div>
+      <div>
+        <div class="hs-num">$100B+</div>
+        <div class="hs-label">Retail Media<br>Market by 2026</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMOS -->
+<section class="demos-section" id="demos">
+  <div class="section-tag">Interactive Demos</div>
+  <div class="section-title">Explore LinqUID</div>
+  <p class="section-sub">Four interactive experiences showing the full LinqUID vision — from investor pitch to live merchant analytics.</p>
+
+  <div class="demos-grid">
+
+    <!-- DEMO 1: Prototype v2 (newest) -->
+    <a href="linquid-prototype_2.html" class="demo-card card-red">
+      <div class="demo-card-accent"></div>
+      <div class="demo-card-top">
+        <div class="demo-tag">⚡ Latest</div>
+        <div class="demo-icon">🤖</div>
+        <h2>Product Overview v2<br>— Agentic Commerce</h2>
+        <p>The full LinqUID pitch and product walkthrough — updated with the Agentic Commerce layer. See how AI agents use your QuID credential within human-defined guardrails. Includes investor deck, consumer flow, and merchant demo.</p>
+      </div>
+      <div class="demo-card-footer">
+        <div class="demo-features">
+          <span class="demo-feat-pill">Pitch Deck</span>
+          <span class="demo-feat-pill">Agentic Commerce</span>
+          <span class="demo-feat-pill">Consumer Flow</span>
+          <span class="demo-feat-pill">Merchant Demo</span>
+        </div>
+        <div class="demo-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- DEMO 2: Interactive Mobile Demo -->
+    <a href="linquid-demo.html" class="demo-card card-navy">
+      <div class="demo-card-accent"></div>
+      <div class="demo-card-top">
+        <div class="demo-tag">📱 Interactive</div>
+        <div class="demo-icon">📲</div>
+        <h2>Interactive Mobile Demo</h2>
+        <p>A full click-through mobile prototype of the qUID app. Tap through real consumer flows — login, QuID score dashboard, identity sharing, inviting friends — and switch to the merchant mode to see the checkout experience.</p>
+      </div>
+      <div class="demo-card-footer">
+        <div class="demo-features">
+          <span class="demo-feat-pill">Consumer App</span>
+          <span class="demo-feat-pill">Merchant Mode</span>
+          <span class="demo-feat-pill">Click-Through</span>
+        </div>
+        <div class="demo-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- DEMO 3: Merchant Dashboard -->
+    <a href="linquid-merchant-dashboard.html" class="demo-card card-blue">
+      <div class="demo-card-accent"></div>
+      <div class="demo-card-top">
+        <div class="demo-tag">📊 Dashboard</div>
+        <div class="demo-icon">🏪</div>
+        <h2>Merchant Analytics Dashboard</h2>
+        <p>A live analytics dashboard showing what merchants see when integrated with LinqUID. KPI cards, revenue charts, QuID-level distribution, transaction history, and customer identity insights — all in one view.</p>
+      </div>
+      <div class="demo-card-footer">
+        <div class="demo-features">
+          <span class="demo-feat-pill">Live Charts</span>
+          <span class="demo-feat-pill">QuID Analytics</span>
+          <span class="demo-feat-pill">Transaction Feed</span>
+        </div>
+        <div class="demo-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- DEMO 4: Prototype v1 -->
+    <a href="linquid-prototype_1.html" class="demo-card card-green">
+      <div class="demo-card-accent"></div>
+      <div class="demo-card-top">
+        <div class="demo-tag">📋 Original</div>
+        <div class="demo-icon">🔗</div>
+        <h2>Product Overview v1<br>— Core Identity</h2>
+        <p>The original LinqUID product overview and pitch deck. Covers the identity fragmentation problem, QuID levels, the two-sided value proposition for consumers and retailers, business model, market opportunity, and competitive landscape.</p>
+      </div>
+      <div class="demo-card-footer">
+        <div class="demo-features">
+          <span class="demo-feat-pill">Pitch Deck</span>
+          <span class="demo-feat-pill">QuID Levels</span>
+          <span class="demo-feat-pill">Market Data</span>
+          <span class="demo-feat-pill">Consumer Flow</span>
+        </div>
+        <div class="demo-arrow">→</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about-section">
+  <div class="about-inner">
+    <div class="about-left">
+      <div class="stag">About LinqUID</div>
+      <h2>The Identity Layer<br>Commerce Is Missing</h2>
+      <p>Every person carries five distinct identity layers — but has no way to control which is exposed, when, or to whom. LinqUID bridges this gap: a portable, consented commerce identity that works across channels, merchants, and AI agents.</p>
+      <p>As agentic commerce accelerates, the need for a verified, sovereign identity credential becomes urgent. LinqUID is that credential — built on social identity, secured by consent, and designed for both human and AI-driven commerce.</p>
+      <div class="about-contact">
+        <div class="name">Sebastien "Seb" Taveau</div>
+        <div class="role">Founder · Tech Product Executive</div>
+        <a href="mailto:staveau@linquid.us">staveau@linquid.us</a>
+        <span style="color:rgba(255,255,255,0.3);margin:0 8px;">·</span>
+        <a href="tel:+16502830125">+1 650 283 0125</a>
+      </div>
+    </div>
+    <div class="about-right">
+      <div class="about-stat-card">
+        <div class="about-stat-num">$29/order</div>
+        <div class="about-stat-label">Average merchant loss from identity fragmentation and rising Customer Acquisition Costs</div>
+      </div>
+      <div class="about-stat-card">
+        <div class="about-stat-num">70–90%</div>
+        <div class="about-stat-label">Bounce rate on social traffic — without a portable identity layer, every visit starts from zero</div>
+      </div>
+      <div class="about-stat-card">
+        <div class="about-stat-num">57%</div>
+        <div class="about-stat-label">Consumer–merchant trust gap — a gap AI agents will widen without a verified credential layer</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    © 2026
+    <span class="footer-brand">
+      <span class="linq">Linq</span><span class="u">U</span><span class="id">ID</span>
+    </span>
+    — Commerce Profile based on Social Identity
+    <span style="margin:0 10px;opacity:0.3;">·</span>
+    <a href="mailto:staveau@linquid.us">staveau@linquid.us</a>
+    <span style="margin:0 10px;opacity:0.3;">·</span>
+    Confidential
+  </p>
+</footer>
+
+</body>
+</html>
